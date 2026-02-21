@@ -1,0 +1,75 @@
+import { z } from 'zod';
+export declare const ItemConditionSchema: z.ZodEnum<["brand_new", "like_new", "gently_used", "well_loved"]>;
+export declare const ItemSchema: z.ZodObject<{
+    id: z.ZodString;
+    user_id: z.ZodString;
+    title: z.ZodString;
+    description: z.ZodOptional<z.ZodString>;
+    category: z.ZodString;
+    subcategory: z.ZodOptional<z.ZodString>;
+    condition: z.ZodEnum<["brand_new", "like_new", "gently_used", "well_loved"]>;
+    photos: z.ZodArray<z.ZodString, "many">;
+    tags: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    status: z.ZodDefault<z.ZodEnum<["active", "paused", "traded", "removed"]>>;
+    created_at: z.ZodDate;
+    updated_at: z.ZodDate;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    created_at: Date;
+    updated_at: Date;
+    status: "active" | "paused" | "traded" | "removed";
+    user_id: string;
+    title: string;
+    category: string;
+    condition: "brand_new" | "like_new" | "gently_used" | "well_loved";
+    photos: string[];
+    tags: string[];
+    description?: string | undefined;
+    subcategory?: string | undefined;
+}, {
+    id: string;
+    created_at: Date;
+    updated_at: Date;
+    user_id: string;
+    title: string;
+    category: string;
+    condition: "brand_new" | "like_new" | "gently_used" | "well_loved";
+    photos: string[];
+    status?: "active" | "paused" | "traded" | "removed" | undefined;
+    description?: string | undefined;
+    subcategory?: string | undefined;
+    tags?: string[] | undefined;
+}>;
+export declare const CreateItemInputSchema: z.ZodObject<Omit<{
+    id: z.ZodString;
+    user_id: z.ZodString;
+    title: z.ZodString;
+    description: z.ZodOptional<z.ZodString>;
+    category: z.ZodString;
+    subcategory: z.ZodOptional<z.ZodString>;
+    condition: z.ZodEnum<["brand_new", "like_new", "gently_used", "well_loved"]>;
+    photos: z.ZodArray<z.ZodString, "many">;
+    tags: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    status: z.ZodDefault<z.ZodEnum<["active", "paused", "traded", "removed"]>>;
+    created_at: z.ZodDate;
+    updated_at: z.ZodDate;
+}, "id" | "created_at" | "updated_at" | "status" | "user_id">, "strip", z.ZodTypeAny, {
+    title: string;
+    category: string;
+    condition: "brand_new" | "like_new" | "gently_used" | "well_loved";
+    photos: string[];
+    tags: string[];
+    description?: string | undefined;
+    subcategory?: string | undefined;
+}, {
+    title: string;
+    category: string;
+    condition: "brand_new" | "like_new" | "gently_used" | "well_loved";
+    photos: string[];
+    description?: string | undefined;
+    subcategory?: string | undefined;
+    tags?: string[] | undefined;
+}>;
+export type ItemCondition = z.infer<typeof ItemConditionSchema>;
+export type Item = z.infer<typeof ItemSchema>;
+export type CreateItemInput = z.infer<typeof CreateItemInputSchema>;
