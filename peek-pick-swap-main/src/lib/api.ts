@@ -25,6 +25,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
   const headers: Record<string, string> = {};
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
@@ -37,7 +38,7 @@ async function request<T>(path: string, method: string, body?: unknown): Promise
     payload = JSON.stringify(body);
   }
 
-  const res = await fetch(path, { method, headers, body: payload });
+  const res = await fetch(baseUrl + path, { method, headers, body: payload });
 
   if (res.status === 401) {
     clearToken();
