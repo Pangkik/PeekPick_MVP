@@ -41,8 +41,25 @@ const BADGE_THRESHOLDS = [
 ];
 
 const app = express();
+app.set("trust proxy", 1);
+// ponytail: allow-all CORS so a separately hosted frontend (Vercel) can call this API
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
 app.use(express.json());
 app.use("/uploads", express.static(UPLOAD_DIR));
+
+// absolute photo URLs so images work when the frontend lives on another domain
+let publicBase = "";
+app.use((req, res, next) => {
+  if (!publicBase) publicBase = `${req.protocol}://${req.get("host")}`;
+  next();
+});
+const absUrl = (u) => (u && u.startsWith("/") ? publicBase + u : u);
 
 // ---------- helpers ----------
 
@@ -54,7 +71,7 @@ function publicUser(row) {
     name: row.name,
     bio: row.bio || "",
     location: row.location || "",
-    avatarUrl: row.avatar_url || "",
+    avatarUrl: absUrl(row.avatar_url || ""),
     verified: !!row.verified,
   };
 }
@@ -67,12 +84,12 @@ function publicItem(row) {
     category: row.category,
     condition: row.condition,
     description: row.description || "",
-    photoUrls: JSON.parse(row.photo_urls || "[]"),
+    photoUrls: JSON.parse(row.photo_urls || "[]").map(absUrl),
     wants: JSON.parse(row.wants || "[]"),
     available: !!row.available,
     createdAt: row.created_at,
     owner: owner
-      ? { id: owner.id, name: owner.name, avatarUrl: owner.avatar_url || "", location: owner.location || "" }
+      ? { id: owner.id, name: owner.name, avatarUrl: absUrl(owner.avatar_url || ""), location: owner.location || "" }
       : null,
   };
 }
