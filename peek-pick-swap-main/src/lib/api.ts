@@ -25,7 +25,8 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, method: string, body?: unknown): Promise<T> {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  let baseUrl = import.meta.env.VITE_API_BASE_URL || "";
+  if (baseUrl && !baseUrl.startsWith("http")) baseUrl = "https://" + baseUrl;
   const headers: Record<string, string> = {};
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
