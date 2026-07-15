@@ -118,6 +118,35 @@ function makeCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+// ponytail: native fetch + Resend's raw HTTP API, no SDK dependency for one POST.
+// Falls back to console.log (local dev, or if Resend is unset/unreachable) so a
+// broken email provider never blocks signup/login.
+async function sendVerificationCode(email, code) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.log(`[PeekPick] Verification code for ${email}: ${code}`);
+    return;
+  }
+  const url = process.env.RESEND_API_URL || "https://api.resend.com/emails";
+  const from = process.env.EMAIL_FROM || "PeekPick <onboarding@resend.dev>";
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from,
+        to: email,
+        subject: "Your PeekPick verification code",
+        html: `<p>Your PeekPick verification code is:</p><p style="font-size:28px;font-weight:bold;letter-spacing:4px">${code}</p><p>Enter it in the app to finish signing up.</p>`,
+      }),
+    });
+    if (!res.ok) throw new Error(`Resend responded with ${res.status}`);
+  } catch (err) {
+    console.error(`[PeekPick] Failed to send verification email to ${email}:`, err.message || err);
+    console.log(`[PeekPick] Verification code for ${email}: ${code}`);
+  }
+}
+
 function signToken(user) {
   return jwt.sign({ id: user.id }, JWT_SECRET, { expiresIn: "30d" });
 }
@@ -172,7 +201,7 @@ function requireAuth(req, res, next) {
 
 // ---------- auth ----------
 
-app.post("/api/auth/signup", authLimiter, (req, res) => {
+app.post("/api/auth/signup", authLimiter, async (req, res) => {
   const { email, password, name } = req.body || {};
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ error: "Valid email is required" });
@@ -189,7 +218,7 @@ app.post("/api/auth/signup", authLimiter, (req, res) => {
     "INSERT INTO users (email, password_hash, name, verify_code) VALUES (?, ?, ?, ?)"
   ).run(email, passwordHash, name || "", code);
 
-  console.log(`[PeekPick] Verification code for ${email}: ${code}`);
+  await sendVerificationCode(email, code);
   res.status(201).json({ needsVerification: true });
 });
 
@@ -205,7 +234,7 @@ app.post("/api/auth/verify", authLimiter, (req, res) => {
   res.json({ token: signToken(fresh), user: publicUser(fresh) });
 });
 
-app.post("/api/auth/login", authLimiter, (req, res) => {
+app.post("/api/auth/login", authLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email);
   if (!user || !bcrypt.compareSync(password || "", user.password_hash)) {
@@ -214,7 +243,7 @@ app.post("/api/auth/login", authLimiter, (req, res) => {
   if (!user.verified) {
     const code = makeCode();
     db.prepare("UPDATE users SET verify_code = ? WHERE id = ?").run(code, user.id);
-    console.log(`[PeekPick] Verification code for ${email}: ${code}`);
+    await sendVerificationCode(email, code);
     return res.status(403).json({ error: "Account not verified", needsVerification: true });
   }
   res.json({ token: signToken(user), user: publicUser(user) });

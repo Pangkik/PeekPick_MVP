@@ -12,6 +12,10 @@ for (const suffix of ["", "-wal", "-shm"]) {
   } catch {}
 }
 process.env.PEEKPICK_DB_PATH = dbPath;
+// ponytail: point Resend at a dead port so every signup/login in this run exercises the
+// "provider unreachable -> fall back to console.log" path (see sendVerificationCode).
+process.env.RESEND_API_KEY = "test-key";
+process.env.RESEND_API_URL = "http://127.0.0.1:58239/dead-resend-endpoint";
 
 // dynamic import so the env var above is set before db.js opens its connection
 const { default: db } = await import("./db.js");
