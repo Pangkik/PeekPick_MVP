@@ -19,3 +19,7 @@ export const CONDITIONS = [
   { id: "gently-used", label: "Gently Used", desc: "Minor signs of use, fully functional" },
   { id: "well-loved", label: "Well-Loved", desc: "Noticeable wear but works great" },
 ];
+
+export function labelFor(list: { id: string; label: string }[], id: string) {
+  return list.find((entry) => entry.id === id)?.label ?? id;
+}
