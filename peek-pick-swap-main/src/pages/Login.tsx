@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,10 @@ import { ApiError } from "@/lib/api";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, verify } = useAuthActions();
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(() => (location.state as { email?: string } | null)?.email ?? "");
   const [password, setPassword] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
   const [formError, setFormError] = useState("");

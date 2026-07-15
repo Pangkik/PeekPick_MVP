@@ -298,20 +298,21 @@ export default function SwipeInterface() {
                     handleReportClick();
                   }}
                   aria-label="Report item"
-                  className="absolute top-3 right-3 z-10 w-11 h-11 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center text-white/70 hover:text-white hover:bg-black/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  className="absolute top-3 right-3 z-10 w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/90 hover:text-white hover:bg-black/60 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  style={{ opacity: isDragging ? 0 : 1 }}
                 >
                   <Flag className="w-4 h-4" />
                 </button>
 
                 {/* Like / Pass overlays (icons, never emoji) */}
                 <div
-                  className="absolute top-8 left-6 flex items-center gap-1.5 bg-primary/90 text-primary-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-primary rotate-[-15deg] transition-opacity duration-100"
+                  className="absolute top-8 left-6 z-20 flex items-center gap-1.5 bg-primary/90 text-primary-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-primary rotate-[-15deg] transition-opacity duration-100"
                   style={{ opacity: dragX > 20 ? Math.min((dragX - 20) / 60, 1) : 0 }}
                 >
                   <Heart className="w-4 h-4 fill-current" /> WANT
                 </div>
                 <div
-                  className="absolute top-8 right-6 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-destructive rotate-[15deg] transition-opacity duration-100"
+                  className="absolute top-8 right-6 z-20 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-destructive rotate-[15deg] transition-opacity duration-100"
                   style={{ opacity: dragX < -20 ? Math.min((-dragX - 20) / 60, 1) : 0 }}
                 >
                   <X className="w-4 h-4" /> PASS

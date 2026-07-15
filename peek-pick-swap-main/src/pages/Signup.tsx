@@ -51,7 +51,7 @@ export default function Signup() {
         setStep("verify");
       } else {
         toast.success("Account created — log in to continue");
-        navigate("/login");
+        navigate("/login", { state: { email } });
       }
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Signup failed");

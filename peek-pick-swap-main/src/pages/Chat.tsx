@@ -18,9 +18,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ReportDialog from "@/components/ReportDialog";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useMe } from "@/hooks/useAuth";
@@ -192,6 +194,7 @@ export default function Chat() {
               <DropdownMenuItem onSelect={() => setReportOpen(true)}>
                 <Flag className="w-4 h-4 mr-2" /> Report user
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => setBlockOpen(true)} className="text-destructive focus:text-destructive">
                 <UserX className="w-4 h-4 mr-2" /> Block user
               </DropdownMenuItem>
@@ -213,7 +216,11 @@ export default function Chat() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleBlock} disabled={blocking}>
+                <AlertDialogAction
+                  onClick={handleBlock}
+                  disabled={blocking}
+                  className={cn(buttonVariants({ variant: "destructive" }))}
+                >
                   {blocking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Block"}
                 </AlertDialogAction>
               </AlertDialogFooter>

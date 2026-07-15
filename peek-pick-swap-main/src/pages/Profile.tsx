@@ -29,6 +29,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useMe, useAuthActions } from "@/hooks/useAuth";
 import type { Item } from "@/lib/types";
@@ -287,7 +289,12 @@ export default function Profile() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(item.id)}>Remove</AlertDialogAction>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(item.id)}
+                              className={cn(buttonVariants({ variant: "destructive" }))}
+                            >
+                              Remove
+                            </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
