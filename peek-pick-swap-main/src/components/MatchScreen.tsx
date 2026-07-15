@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MessageCircle, X, Share2, Package } from "lucide-react";
+import { MessageCircle, X, Share2, Package, ArrowLeftRight } from "lucide-react";
 
 interface MatchItem {
   title: string;
@@ -40,7 +40,7 @@ export default function MatchScreen({ myItem, theirItem, onContinue, onMessage }
           style={{
             left: `${Math.random() * 100}%`,
             top: `${Math.random() * 100}%`,
-            backgroundColor: i % 3 === 0 ? "hsl(var(--primary))" : i % 3 === 1 ? "#fff" : "hsl(var(--swipe-super))",
+            backgroundColor: i % 3 === 0 ? "hsl(var(--primary))" : i % 3 === 1 ? "hsl(var(--secondary))" : "hsl(var(--swipe-super))",
             animationDelay: `${Math.random() * 2}s`,
             animationDuration: `${1 + Math.random() * 2}s`,
             opacity: 0.6,
@@ -58,7 +58,9 @@ export default function MatchScreen({ myItem, theirItem, onContinue, onMessage }
 
       <div className="relative z-10 flex flex-col items-center text-center px-8 max-w-sm mx-auto">
         {/* Match badge */}
-        <div className="text-6xl mb-6 animate-bounce-in">🔄</div>
+        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mb-6 shadow-green animate-bounce-in">
+          <ArrowLeftRight className="w-9 h-9 text-primary-foreground" />
+        </div>
 
         <h1 className="text-5xl font-black mb-2 gradient-text animate-match-pop">
           It's a Trade!
@@ -78,7 +80,7 @@ export default function MatchScreen({ myItem, theirItem, onContinue, onMessage }
 
           {/* Exchange icon */}
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-green animate-pulse">
-            <span className="text-primary-foreground text-xl">⇄</span>
+            <ArrowLeftRight className="w-5 h-5 text-primary-foreground" />
           </div>
 
           {/* Their item */}

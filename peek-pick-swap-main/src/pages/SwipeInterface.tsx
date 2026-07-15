@@ -1,26 +1,18 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { X, Heart, MapPin, ChevronLeft, Info, Zap, Search, RefreshCcw, Package, User, PlusCircle, Loader2 } from "lucide-react";
+import { X, Heart, MapPin, Info, Zap, RefreshCcw, Package, User, PlusCircle, Loader2, PartyPopper } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
-import { CATEGORIES, CONDITIONS } from "@/lib/categories";
+import { api, getToken } from "@/lib/api";
+import { useMe } from "@/hooks/useAuth";
+import { CATEGORIES, CONDITIONS, labelFor } from "@/lib/categories";
+import { DEMO_ITEMS } from "@/lib/demoItems";
 import MatchScreen from "@/components/MatchScreen";
 import BottomNav from "@/components/BottomNav";
+import Wordmark from "@/components/Wordmark";
+import ItemVisual from "@/components/ItemVisual";
 import type { Item, MatchOtherUser, SwipeResult } from "@/lib/types";
-
-const CARD_GRADIENTS = [
-  "from-blue-900/40 to-slate-900/40",
-  "from-amber-900/40 to-stone-900/40",
-  "from-slate-900/40 to-zinc-900/40",
-  "from-emerald-900/40 to-teal-900/40",
-  "from-violet-900/40 to-purple-900/40",
-];
-
-function labelFor(list: { id: string; label: string }[], id: string) {
-  return list.find((entry) => entry.id === id)?.label ?? id;
-}
 
 interface MatchData {
   myItem: Item;
@@ -33,13 +25,24 @@ type SwipeDirection = "left" | "right" | "super";
 
 export default function SwipeInterface() {
   const navigate = useNavigate();
+  const authed = !!getToken();
 
+  const { data: me } = useMe();
+
+  // TODO(dev): /api/discovery currently requires auth, so it's only queried
+  // when logged in. Logged-out visitors browse the static DEMO_ITEMS deck
+  // below (see decisions doc: "browse first, gate on action"). Once the API
+  // supports unauthenticated discovery, drop the `authed` gate and the
+  // DEMO_ITEMS fallback and always use live data.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery<{ items: Item[] }>({
     queryKey: ["discovery"],
     queryFn: () => api.get<{ items: Item[] }>("/api/discovery"),
     refetchOnWindowFocus: false,
+    enabled: authed,
   });
-  const items = data?.items ?? [];
+  const items = authed ? data?.items ?? [] : DEMO_ITEMS;
+  const loading = authed && isLoading;
+  const errored = authed && isError;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dragX, setDragX] = useState(0);
@@ -60,8 +63,34 @@ export default function SwipeInterface() {
   const handleSwipe = (direction: SwipeDirection) => {
     if (!currentItem || swipeAnim) return;
 
+    const isPositive = direction === "right" || direction === "super";
+
+    // Gate: right-swipe / super-swap requires an account. Pass is free.
+    // TODO(dev): swap this redirect-to-login for whatever gated-action UX
+    // product settles on (inline modal / bottom sheet), if a hard redirect
+    // feels too abrupt. The gating point is intentionally isolated here.
+    if (isPositive && !authed) {
+      setExpandInfo(false);
+      setSwipeAnim(direction === "super" ? "right" : direction);
+      window.setTimeout(() => {
+        toast.info("Create a free account to start trading");
+        navigate("/login");
+      }, 300);
+      return;
+    }
+
     setExpandInfo(false);
     setSwipeAnim(direction === "super" ? "right" : direction);
+
+    if (!authed) {
+      // Logged-out pass: advance the local demo deck only, no API call.
+      window.setTimeout(() => {
+        setCurrentIndex((i) => i + 1);
+        setSwipeAnim(null);
+        setDragX(0);
+      }, 300);
+      return;
+    }
 
     const swipePromise = api
       .post<SwipeResult>("/api/swipes", { itemId: currentItem.id, direction })
@@ -84,7 +113,7 @@ export default function SwipeInterface() {
       setCurrentIndex((i) => i + 1);
       setSwipeAnim(null);
       setDragX(0);
-    }, 350);
+    }, 300);
   };
 
   const handleSuperSwap = () => {
@@ -96,8 +125,25 @@ export default function SwipeInterface() {
 
   const handleStartOver = async () => {
     setCurrentIndex(0);
-    await refetch();
+    if (authed) await refetch();
   };
+
+  // Keyboard support: arrow keys mirror the pass/want buttons.
+  useEffect(() => {
+    if (showMatch) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        handleSwipe("right");
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        handleSwipe("left");
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentItem, swipeAnim, authed, showMatch]);
 
   // Touch/mouse drag handlers
   const onDragStart = (clientX: number) => {
@@ -144,39 +190,49 @@ export default function SwipeInterface() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4">
+    <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto">
+      {/* Top bar: avatar (left) + wordmark, minimal by design */}
+      <header className="flex items-center gap-3 px-5 py-4">
         <button
-          onClick={() => navigate("/")}
-          aria-label="Back home"
-          className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center"
+          onClick={() => navigate(authed ? "/profile" : "/login")}
+          aria-label={authed ? "Your profile" : "Sign in"}
+          className="w-11 h-11 rounded-full overflow-hidden bg-surface-elevated border border-border flex items-center justify-center flex-shrink-0 hover:border-primary/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
-          <ChevronLeft className="w-5 h-5" />
+          {authed && me?.user.avatarUrl ? (
+            <img src={me.user.avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <User className="w-5 h-5 text-foreground/60" />
+          )}
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-black text-primary-foreground">P</div>
-          <span className="font-black">Discover</span>
+        <Wordmark />
+      </header>
+
+      {/* Compact pitch strip — logged-out orientation only, single line */}
+      {!authed && (
+        <div className="mx-5 mb-3 rounded-2xl border border-border bg-surface-elevated px-4 py-2.5">
+          <p className="text-xs text-muted-foreground leading-snug">
+            Browsing as a guest — no money, just swap.{" "}
+            <button onClick={() => navigate("/signup")} className="font-semibold text-primary hover:underline">
+              Sign up
+            </button>{" "}
+            to trade and chat.
+          </p>
         </div>
-
-        <button aria-label="Search" className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center">
-          <Search className="w-5 h-5" />
-        </button>
-      </div>
+      )}
 
       {/* Card stack area */}
       <div className="flex-1 flex flex-col items-center px-5 pb-4">
-        {isLoading ? (
+        {loading ? (
           <div className="w-full flex-1 flex items-center justify-center" style={{ height: "460px" }}>
-            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            <Loader2 className="w-8 h-8 text-primary animate-spin" aria-label="Loading items" />
           </div>
-        ) : isError ? (
+        ) : errored ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
             <p className="text-muted-foreground">{error instanceof Error ? error.message : "Couldn't load items"}</p>
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all min-h-11"
+              className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <RefreshCcw className={isFetching ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Try again
             </button>
@@ -193,7 +249,7 @@ export default function SwipeInterface() {
               {/* Main swipe card */}
               <div
                 className={cn(
-                  "absolute inset-0 rounded-3xl overflow-hidden border-2 cursor-grab active:cursor-grabbing select-none transition-shadow",
+                  "absolute inset-0 rounded-3xl overflow-hidden border-2 cursor-grab active:cursor-grabbing select-none shadow-card",
                   swipeAnim === "right" ? "animate-swipe-right" : "",
                   swipeAnim === "left" ? "animate-swipe-left" : "",
                   dragX > swipeLikeThreshold ? "border-swipe-like shadow-green" : "",
@@ -212,44 +268,37 @@ export default function SwipeInterface() {
                 onTouchMove={(e) => onDragMove(e.touches[0].clientX)}
                 onTouchEnd={onDragEnd}
               >
-                {/* Item background */}
-                <div className={cn("absolute inset-0 bg-gradient-to-br", CARD_GRADIENTS[currentIndex % CARD_GRADIENTS.length])} />
-                <div className="absolute inset-0 bg-surface-elevated/60" />
-
-                {/* Photo or fallback icon */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {currentItem.photoUrls[0] ? (
-                    <img
-                      src={currentItem.photoUrls[0]}
-                      alt={currentItem.title}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Package className="w-24 h-24 text-white/30 animate-float" />
-                  )}
+                {/* Photo or gradient+icon placeholder */}
+                <div className="absolute inset-0">
+                  <ItemVisual
+                    category={currentItem.category}
+                    index={currentIndex}
+                    photoUrl={currentItem.photoUrls[0]}
+                    alt={currentItem.title}
+                  />
                 </div>
 
-                {/* Like / Pass overlays */}
+                {/* Like / Pass overlays (icons, never emoji) */}
                 <div
-                  className="absolute top-8 left-6 bg-swipe-like/90 text-white font-black text-xl px-5 py-2 rounded-xl border-2 border-swipe-like rotate-[-15deg] transition-opacity duration-100"
+                  className="absolute top-8 left-6 flex items-center gap-1.5 bg-primary/90 text-primary-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-primary rotate-[-15deg] transition-opacity duration-100"
                   style={{ opacity: dragX > 20 ? Math.min((dragX - 20) / 60, 1) : 0 }}
                 >
-                  TRADE 💚
+                  <Heart className="w-4 h-4 fill-current" /> WANT
                 </div>
                 <div
-                  className="absolute top-8 right-6 bg-swipe-pass/90 text-white font-black text-xl px-5 py-2 rounded-xl border-2 border-swipe-pass rotate-[15deg] transition-opacity duration-100"
+                  className="absolute top-8 right-6 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-destructive rotate-[15deg] transition-opacity duration-100"
                   style={{ opacity: dragX < -20 ? Math.min((-dragX - 20) / 60, 1) : 0 }}
                 >
-                  PASS ✕
+                  <X className="w-4 h-4" /> PASS
                 </div>
 
                 {/* Item info overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/60 to-transparent p-5">
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-card p-5">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-primary bg-primary/15 rounded-full px-3 py-1 border border-primary/30">
+                    <span className="text-xs font-bold text-white bg-white/15 rounded-full px-3 py-1 border border-white/25">
                       {labelFor(CATEGORIES, currentItem.category)}
                     </span>
-                    <span className="text-xs bg-surface-elevated rounded-full px-3 py-1 text-muted-foreground">
+                    <span className="text-xs bg-white/10 rounded-full px-3 py-1 text-white/80">
                       {labelFor(CONDITIONS, currentItem.condition)}
                     </span>
                   </div>
@@ -286,7 +335,7 @@ export default function SwipeInterface() {
                   {/* Expand info */}
                   <button
                     onClick={() => setExpandInfo(!expandInfo)}
-                    className="mt-3 flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 transition-colors"
+                    className="mt-3 flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 transition-colors min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
                   >
                     <Info className="w-3.5 h-3.5" />
                     {expandInfo ? "Hide details" : "More info"}
@@ -300,12 +349,12 @@ export default function SwipeInterface() {
             </div>
 
             {/* Action buttons */}
-            <div className="flex items-center justify-center gap-5 mt-6 w-full">
+            <div role="group" aria-label="Swipe actions" className="flex items-center justify-center gap-5 mt-6 w-full">
               {/* Pass */}
               <button
                 onClick={() => handleSwipe("left")}
                 aria-label="Pass"
-                className="w-16 h-16 rounded-full bg-surface-elevated border-2 border-swipe-pass/40 flex items-center justify-center hover:bg-swipe-pass/10 hover:border-swipe-pass hover:scale-110 transition-all duration-200 shadow-elevated"
+                className="w-16 h-16 rounded-full bg-surface-elevated border-2 border-swipe-pass/40 flex items-center justify-center hover:bg-swipe-pass/10 hover:border-swipe-pass active:scale-95 transition-all duration-200 shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <X className="w-7 h-7 text-swipe-pass" />
               </button>
@@ -316,20 +365,20 @@ export default function SwipeInterface() {
                 disabled={superSwapsLeft === 0}
                 aria-label="Super swap"
                 className={cn(
-                  "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200",
+                  "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   superSwapsLeft > 0
-                    ? "bg-surface-elevated border-swipe-super/40 hover:bg-swipe-super/10 hover:border-swipe-super hover:scale-110 shadow-elevated"
+                    ? "bg-surface-elevated border-swipe-super/40 hover:bg-swipe-super/10 hover:border-swipe-super active:scale-95 shadow-elevated"
                     : "bg-surface border-border opacity-40 cursor-not-allowed"
                 )}
               >
                 <Zap className="w-5 h-5 text-swipe-super" />
               </button>
 
-              {/* Like */}
+              {/* Want */}
               <button
                 onClick={() => handleSwipe("right")}
-                aria-label="Trade"
-                className="w-16 h-16 rounded-full bg-primary flex items-center justify-center hover:bg-primary-glow hover:scale-110 transition-all duration-200 shadow-green pulse-green"
+                aria-label="Want to trade"
+                className="w-16 h-16 rounded-full bg-primary flex items-center justify-center hover:bg-primary-glow active:scale-95 transition-all duration-200 shadow-green pulse-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Heart className="w-7 h-7 text-primary-foreground fill-primary-foreground" />
               </button>
@@ -347,7 +396,7 @@ export default function SwipeInterface() {
                   key={i}
                   className={cn(
                     "h-1 rounded-full transition-all duration-300",
-                    i === currentIndex ? "w-6 bg-primary" : i < currentIndex ? "w-3 bg-surface-hover" : "w-3 bg-surface-elevated"
+                    i === currentIndex ? "w-6 bg-primary" : i < currentIndex ? "w-3 bg-surface-hover" : "w-3 bg-border"
                   )}
                 />
               ))}
@@ -356,7 +405,11 @@ export default function SwipeInterface() {
         ) : (
           /* Empty state */
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
-            <div className="text-7xl animate-bounce-in">🎉</div>
+            {items.length === 0 ? (
+              <Package className="w-16 h-16 text-muted-foreground animate-float" aria-hidden="true" />
+            ) : (
+              <PartyPopper className="w-16 h-16 text-primary animate-float" aria-hidden="true" />
+            )}
             <div>
               <h2 className="text-2xl font-black mb-2">
                 {items.length === 0 ? "Nothing to discover yet" : "You've seen everything!"}
@@ -371,13 +424,13 @@ export default function SwipeInterface() {
               <button
                 onClick={handleStartOver}
                 disabled={isFetching}
-                className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 min-h-11"
+                className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {isFetching ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />} Start Over
               </button>
               <button
-                onClick={() => navigate("/add-item")}
-                className="flex items-center gap-2 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-full shadow-green hover:bg-primary-glow transition-all min-h-11"
+                onClick={() => navigate(authed ? "/add-item" : "/login")}
+                className="flex items-center gap-2 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-full shadow-green hover:bg-primary-glow transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <PlusCircle className="w-4 h-4" /> List an item
               </button>

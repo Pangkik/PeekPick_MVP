@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import Wordmark from "@/components/Wordmark";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
@@ -108,10 +109,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-black text-primary-foreground">P</div>
-          <span className="font-black">Profile</span>
-        </div>
+        <Wordmark size="sm" rest="rofile" />
         <button
           onClick={logout}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors min-h-11 px-2"

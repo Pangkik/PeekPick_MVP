@@ -1,85 +1,152 @@
+/* @import must precede all other statements (CSS spec) or browsers ignore it. */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* PeekPick Design System — Spotify Dark × Tinder Energy */
-/* All colors MUST be HSL */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+/* PeekPick Design System — Vibrant & Playful (emerald / amber / blue) */
+/* Green is the brand truth: PeekPick is a sustainability / circular-economy */
+/* app. All colors MUST be HSL. Light mode is the default theme; .dark is a */
+/* desaturated tonal variant for users who prefer dark mode. */
 
 @layer base {
   :root {
-    /* Core backgrounds — Spotify dark layers */
-    --background: 0 0% 7%;          /* #121212 */
-    --surface: 0 0% 9.4%;           /* #181818 */
-    --surface-elevated: 0 0% 15.7%; /* #282828 */
-    --surface-hover: 0 0% 19.6%;    /* #323232 */
+    /* Core backgrounds — soft warm-green wash */
+    --background: 138 77% 97%;        /* #F0FDF4 */
+    --surface: 145 40% 94%;           /* alternating section band */
+    --surface-elevated: 0 0% 100%;    /* #FFFFFF — cards, buttons, the swipe deck */
+    --surface-hover: 148 55% 91%;     /* pressed/hover tint */
 
-    --foreground: 0 0% 100%;        /* #FFFFFF */
-    --foreground-muted: 0 0% 70.2%; /* #B3B3B3 */
-    --foreground-subtle: 0 0% 40%;  /* #666666 */
+    --foreground: 155 40% 14%;        /* deep green-charcoal, ~13:1 on background */
+    --foreground-muted: 155 20% 35%;  /* muted body copy, ~6:1 on white */
+    --foreground-subtle: 150 12% 55%;
 
-    /* Brand — Spotify Green */
-    --primary: 141 73% 42%;         /* #1DB954 */
-    --primary-foreground: 0 0% 0%;
-    --primary-glow: 141 73% 55%;    /* Lighter green for glow */
-    --primary-dim: 141 40% 28%;     /* Dim green for backgrounds */
+    /* Brand — Emerald (primary action / "want" heart). Mid greens like */
+    /* #10B981 fail 4.5:1 with white text, so the interactive default sits */
+    /* in the emerald-700 range (#047857, ~5.5:1); glow/hover stays just */
+    /* inside AA (~4.9:1) rather than jumping to a brighter, failing green. */
+    --primary: 163 94% 24%;           /* #047857 */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 161 90% 27%;      /* hover/glow, still ≥4.5:1 with white text */
+    --primary-dim: 152 76% 92%;       /* tinted mint background */
 
     /* Cards & UI */
-    --card: 0 0% 15.7%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 155 40% 14%;
 
-    --popover: 0 0% 15.7%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 155 40% 14%;
 
-    --secondary: 0 0% 19.6%;
-    --secondary-foreground: 0 0% 100%;
+    /* Secondary — warm amber pop. Decorative only: a mid amber fails AA */
+    /* contrast for text at any weight we tested. Use for gradients, icon */
+    /* fills, illustrative backgrounds — never body text. */
+    --secondary: 27 96% 61%;          /* #FB923C */
+    --secondary-foreground: 155 40% 14%;
 
-    --muted: 0 0% 19.6%;
-    --muted-foreground: 0 0% 70.2%;
+    --muted: 150 35% 92%;
+    --muted-foreground: 155 20% 35%;
 
-    --accent: 141 73% 42%;
-    --accent-foreground: 0 0% 0%;
+    /* Accent / CTA — Blue, kept as the secondary interactive color so the */
+    /* "super swap" highlight reads distinctly from the green want/primary */
+    /* action and the red pass/destructive action. */
+    --accent: 221 83% 53%;            /* #2563EB */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;         /* #DC2626 */
     --destructive-foreground: 0 0% 100%;
 
-    /* Swipe colors */
-    --swipe-like: 141 73% 42%;      /* Green — swipe right */
-    --swipe-pass: 0 84% 60%;        /* Red — swipe left */
-    --swipe-super: 210 100% 56%;    /* Blue — super swap */
+    /* Swipe semantics */
+    --swipe-like: 163 94% 24%;        /* Emerald — swipe right / want */
+    --swipe-pass: 0 72% 51%;          /* Red — swipe left / pass */
+    --swipe-super: 221 83% 53%;       /* Blue — super swap */
 
-    --border: 0 0% 22%;
-    --input: 0 0% 19.6%;
-    --ring: 141 73% 42%;
+    --border: 149 80% 90%;            /* soft mint hairline */
+    --input: 149 65% 87%;
+    --ring: 163 94% 24%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 9.4%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 141 73% 42%;
-    --sidebar-primary-foreground: 0 0% 0%;
-    --sidebar-accent: 0 0% 19.6%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 22%;
-    --sidebar-ring: 141 73% 42%;
+    --sidebar-background: 145 40% 94%;
+    --sidebar-foreground: 155 40% 14%;
+    --sidebar-primary: 163 94% 24%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 148 55% 91%;
+    --sidebar-accent-foreground: 155 40% 14%;
+    --sidebar-border: 149 80% 90%;
+    --sidebar-ring: 163 94% 24%;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(0 0% 7%) 0%, hsl(141 30% 8%) 50%, hsl(0 0% 7%) 100%);
-    --gradient-card: linear-gradient(180deg, transparent 0%, hsl(0 0% 0% / 0.8) 100%);
-    --gradient-green: linear-gradient(135deg, hsl(141 73% 42%), hsl(141 73% 35%));
-    --gradient-match: linear-gradient(135deg, hsl(141 73% 42%) 0%, hsl(160 80% 38%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(138 77% 97%) 0%, hsl(150 60% 92%) 50%, hsl(138 77% 97%) 100%);
+    --gradient-card: linear-gradient(180deg, transparent 0%, hsl(155 45% 6% / 0.88) 100%);
+    --gradient-green: linear-gradient(135deg, hsl(163 94% 24%), hsl(163 90% 19%));
+    --gradient-match: linear-gradient(135deg, hsl(163 94% 24%) 0%, hsl(221 83% 53%) 100%);
 
-    /* Shadows */
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.4);
-    --shadow-green: 0 0 20px hsl(141 73% 42% / 0.3);
-    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.5);
+    /* Shadows — warm, tinted (never pure black) */
+    --shadow-card: 0 8px 32px hsl(155 45% 15% / 0.16);
+    --shadow-green: 0 0 20px hsl(163 94% 24% / 0.35);
+    --shadow-elevated: 0 4px 16px hsl(155 40% 15% / 0.14);
   }
 
-  /* Dark mode is default — no light mode override needed */
+  /* Dark mode — desaturated tonal variant, contrast checked independently */
   .dark {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 100%;
+    --background: 155 35% 8%;
+    --surface: 155 28% 12%;
+    --surface-elevated: 155 24% 16%;
+    --surface-hover: 155 22% 21%;
+
+    --foreground: 138 35% 93%;
+    --foreground-muted: 140 18% 70%;
+    --foreground-subtle: 140 12% 48%;
+
+    --primary: 158 75% 45%;
+    --primary-foreground: 155 60% 10%;
+    --primary-glow: 156 80% 52%;
+    --primary-dim: 158 40% 22%;
+
+    --card: 155 24% 16%;
+    --card-foreground: 138 35% 93%;
+
+    --popover: 155 24% 16%;
+    --popover-foreground: 138 35% 93%;
+
+    --secondary: 27 85% 55%;
+    --secondary-foreground: 155 60% 10%;
+
+    --muted: 155 20% 18%;
+    --muted-foreground: 140 18% 70%;
+
+    --accent: 221 85% 68%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 70% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --swipe-like: 158 75% 45%;
+    --swipe-pass: 0 70% 60%;
+    --swipe-super: 221 85% 68%;
+
+    --border: 155 22% 24%;
+    --input: 155 22% 24%;
+    --ring: 158 75% 45%;
+
+    --sidebar-background: 155 28% 12%;
+    --sidebar-foreground: 138 35% 93%;
+    --sidebar-primary: 158 75% 45%;
+    --sidebar-primary-foreground: 155 60% 10%;
+    --sidebar-accent: 155 22% 21%;
+    --sidebar-accent-foreground: 138 35% 93%;
+    --sidebar-border: 155 22% 24%;
+    --sidebar-ring: 158 75% 45%;
+
+    --gradient-hero: linear-gradient(135deg, hsl(155 35% 8%) 0%, hsl(158 30% 13%) 50%, hsl(155 35% 8%) 100%);
+    --gradient-card: linear-gradient(180deg, transparent 0%, hsl(155 45% 4% / 0.9) 100%);
+    --gradient-green: linear-gradient(135deg, hsl(158 75% 45%), hsl(158 75% 36%));
+    --gradient-match: linear-gradient(135deg, hsl(158 75% 45%) 0%, hsl(221 85% 68%) 100%);
+
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-green: 0 0 20px hsl(158 75% 45% / 0.35);
+    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.55);
   }
 }
 
@@ -89,12 +156,17 @@
   }
 
   html {
+    color-scheme: light;
+  }
+
+  html.dark {
     color-scheme: dark;
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -108,7 +180,7 @@
     background: hsl(var(--surface));
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--surface-elevated));
+    background: hsl(var(--border));
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
@@ -128,18 +200,18 @@
     border-color: hsl(var(--swipe-pass));
     box-shadow: 0 0 30px hsl(var(--swipe-pass) / 0.4);
   }
-  
-  /* Green glow text */
+
+  /* Glow text */
   .text-glow {
-    text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.35);
   }
 
   /* Glassmorphism */
   .glass {
-    background: hsl(var(--surface-elevated) / 0.6);
+    background: hsl(var(--surface-elevated) / 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid hsl(var(--border) / 0.5);
+    border: 1px solid hsl(var(--border) / 0.7);
   }
 
   /* Category bubble selected state */
@@ -157,14 +229,22 @@
     background-clip: text;
   }
 
-  /* Pulse green */
+  /* Pulse (brand emerald) */
   .pulse-green {
     animation: pulseGreen 2s ease-in-out infinite;
+  }
+
+  /* Safe-area padding helpers for fixed bottom nav */
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+  .pb-safe-nav {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
   }
 }
 
 @keyframes pulseGreen {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.4); }
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); }
   50% { box-shadow: 0 0 0 12px hsl(var(--primary) / 0); }
 }
 
@@ -209,11 +289,22 @@
 }
 
 @layer components {
-  .animate-swipe-right { animation: swipeRight 0.4s ease-out forwards; }
-  .animate-swipe-left { animation: swipeLeft 0.4s ease-out forwards; }
-  .animate-card-entry { animation: cardEntry 0.35s ease-out; }
-  .animate-match-pop { animation: matchPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .animate-swipe-right { animation: swipeRight 0.3s ease-out forwards; }
+  .animate-swipe-left { animation: swipeLeft 0.3s ease-out forwards; }
+  .animate-card-entry { animation: cardEntry 0.3s ease-out; }
+  .animate-match-pop { animation: matchPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .animate-float { animation: float 3s ease-in-out infinite; }
-  .animate-fade-slide-up { animation: fadeSlideUp 0.6s ease-out; }
-  .animate-bounce-in { animation: bounce-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .animate-fade-slide-up { animation: fadeSlideUp 0.3s ease-out; }
+  .animate-bounce-in { animation: bounce-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+}
+
+/* Respect reduced-motion preferences: transform/opacity-only, 150-300ms */
+/* animations elsewhere already fit this budget; this is the hard stop. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
