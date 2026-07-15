@@ -10,6 +10,7 @@ import { CATEGORIES, CONDITIONS, labelFor } from "@/lib/categories";
 import { DEMO_ITEMS } from "@/lib/demoItems";
 import MatchScreen from "@/components/MatchScreen";
 import BottomNav from "@/components/BottomNav";
+import Wordmark from "@/components/Wordmark";
 import ItemVisual from "@/components/ItemVisual";
 import type { Item, MatchOtherUser, SwipeResult } from "@/lib/types";
 
@@ -204,12 +205,7 @@ export default function SwipeInterface() {
           )}
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-black text-primary-foreground">
-            P
-          </div>
-          <span className="font-extrabold text-lg tracking-tight">PeekPick</span>
-        </div>
+        <Wordmark />
       </header>
 
       {/* Compact pitch strip — logged-out orientation only, single line */}

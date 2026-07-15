@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import Wordmark from "@/components/Wordmark";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuthActions } from "@/hooks/useAuth";
 import { ApiError } from "@/lib/api";
@@ -76,9 +77,8 @@ export default function Login() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
         <div className="w-full max-w-md">
-          <div className="flex items-center gap-2 justify-center mb-8">
-            <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-black text-primary-foreground">P</div>
-            <span className="font-black text-lg">PeekPick</span>
+          <div className="flex justify-center mb-8">
+            <Wordmark />
           </div>
 
           <div className="bg-surface-elevated border border-border rounded-3xl p-6">
@@ -130,9 +130,8 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-md">
-        <div className="flex items-center gap-2 justify-center mb-8">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-sm font-black text-primary-foreground">P</div>
-          <span className="font-black text-lg">PeekPick</span>
+        <div className="flex justify-center mb-8">
+          <Wordmark />
         </div>
 
         <div className="bg-surface-elevated border border-border rounded-3xl p-6">

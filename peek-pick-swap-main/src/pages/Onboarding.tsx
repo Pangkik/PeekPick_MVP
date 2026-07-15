@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { CATEGORIES, CONDITIONS } from "@/lib/categories";
+import Wordmark from "@/components/Wordmark";
 
 const RADIUS_OPTIONS = [
   { id: "neighborhood", label: "Neighborhood", desc: "~5 km" },
@@ -99,10 +100,7 @@ export default function Onboarding() {
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-black text-primary-foreground">P</div>
-          <span className="font-black text-base">PeekPick</span>
-        </div>
+        <Wordmark size="sm" />
 
         <button
           onClick={() => navigate("/swipe")}
