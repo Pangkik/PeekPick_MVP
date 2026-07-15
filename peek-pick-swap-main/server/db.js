@@ -87,6 +87,22 @@ CREATE TABLE IF NOT EXISTS passports (
   waste_diverted_kg REAL DEFAULT 0,
   badges TEXT DEFAULT '[]'
 );
+
+CREATE TABLE IF NOT EXISTS reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  reporter_id INTEGER NOT NULL REFERENCES users(id),
+  target_type TEXT NOT NULL,
+  target_id INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  created_at TEXT DEFAULT current_timestamp
+);
+
+CREATE TABLE IF NOT EXISTS blocks (
+  blocker_id INTEGER NOT NULL REFERENCES users(id),
+  blocked_id INTEGER NOT NULL REFERENCES users(id),
+  created_at TEXT DEFAULT current_timestamp,
+  PRIMARY KEY (blocker_id, blocked_id)
+);
 `);
 
 export default db;

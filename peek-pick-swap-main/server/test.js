@@ -4,6 +4,8 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { execFileSync } from "child_process";
+import { fileURLToPath } from "url";
 
 const dbPath = path.join(os.tmpdir(), `peekpick-test-${Date.now()}.db`);
 for (const suffix of ["", "-wal", "-shm"]) {
@@ -12,6 +14,10 @@ for (const suffix of ["", "-wal", "-shm"]) {
   } catch {}
 }
 process.env.PEEKPICK_DB_PATH = dbPath;
+// ponytail: point Resend at a dead port so every signup/login in this run exercises the
+// "provider unreachable -> fall back to console.log" path (see sendVerificationCode).
+process.env.RESEND_API_KEY = "test-key";
+process.env.RESEND_API_URL = "http://127.0.0.1:58239/dead-resend-endpoint";
 
 // dynamic import so the env var above is set before db.js opens its connection
 const { default: db } = await import("./db.js");
@@ -177,6 +183,104 @@ async function main() {
     assert(completeAgain.status === 200, "complete again status 200");
     const passportA2 = await api("GET", "/api/me", { token: tokenA });
     assert(passportA2.data.passport.itemsReused === 1, "completing twice does not double-count");
+
+    // --- third user for reports & blocks ---
+    const tokenC = await signupAndVerify("carol@test.dev", "password123", "Carol");
+    const meC = await api("GET", "/api/me", { token: tokenC });
+    await api("POST", "/api/me/preferences", {
+      token: tokenC,
+      json: { haveCategories: ["plants"], wantCategories: ["books"], condition: "good", radius: "city", tradeStyle: "one-for-one" },
+    });
+    const itemC = await createItem(tokenC, {
+      title: "Succulent Pot",
+      category: "plants",
+      condition: "good",
+      description: "Small and cheerful.",
+      wants: ["books"],
+    });
+
+    // --- report ---
+    const badReport = await api("POST", "/api/reports", { token: tokenA, json: { targetType: "item", targetId: itemC.id } });
+    assert(badReport.status === 400, "report without reason is rejected");
+
+    const report = await api("POST", "/api/reports", {
+      token: tokenA,
+      json: { targetType: "item", targetId: itemC.id, reason: "suspicious listing" },
+    });
+    assert(report.status === 201 && report.data.id, "report created");
+    const reportRow = db.prepare("SELECT * FROM reports WHERE id = ?").get(report.data.id);
+    assert(reportRow && reportRow.reporter_id === meA.data.user.id && reportRow.target_id === itemC.id, "report row stored correctly");
+
+    // --- block hides discovery ---
+    const discoveryBeforeBlock = await api("GET", "/api/discovery", { token: tokenA });
+    assert(discoveryBeforeBlock.data.items.some((i) => i.id === itemC.id), "carol's item visible to A before block");
+
+    const block = await api("POST", "/api/blocks", { token: tokenA, json: { userId: meC.data.user.id } });
+    assert(block.status === 201, `block status 201, got ${block.status} ${JSON.stringify(block.data)}`);
+
+    const discoveryAfterBlock = await api("GET", "/api/discovery", { token: tokenA });
+    assert(!discoveryAfterBlock.data.items.some((i) => i.id === itemC.id), "carol's item hidden from A's discovery after block");
+
+    // --- block prevents new matches (either direction) ---
+    const blockedSwipe1 = await api("POST", "/api/swipes", { token: tokenA, json: { itemId: itemC.id, direction: "right" } });
+    assert(blockedSwipe1.status === 403, `blocked swipe by blocker rejected, got ${blockedSwipe1.status}`);
+    const blockedSwipe2 = await api("POST", "/api/swipes", { token: tokenC, json: { itemId: itemA.id, direction: "right" } });
+    assert(blockedSwipe2.status === 403, `blocked swipe by blocked user rejected, got ${blockedSwipe2.status}`);
+
+    const matchesAWhileBlocked = await api("GET", "/api/matches", { token: tokenA });
+    assert(!matchesAWhileBlocked.data.matches.some((m) => m.otherUser && m.otherUser.id === meC.data.user.id), "no match formed with blocked user");
+
+    // --- unblock restores normal behavior ---
+    const unblock = await api("DELETE", `/api/blocks/${meC.data.user.id}`, { token: tokenA });
+    assert(unblock.status === 200, "unblock status 200");
+
+    const swipeAfterUnblock1 = await api("POST", "/api/swipes", { token: tokenA, json: { itemId: itemC.id, direction: "right" } });
+    assert(swipeAfterUnblock1.status === 200 && swipeAfterUnblock1.data.matched === false, "A can swipe carol's item again after unblock");
+    const swipeAfterUnblock2 = await api("POST", "/api/swipes", { token: tokenC, json: { itemId: itemA.id, direction: "right" } });
+    assert(swipeAfterUnblock2.status === 200 && swipeAfterUnblock2.data.matched === true, "match forms normally after unblock");
+
+    // --- block soft-hides an existing conversation without deleting it ---
+    const matchesBBefore = await api("GET", "/api/matches", { token: tokenB });
+    assert(matchesBBefore.data.matches.length === 1, "B still sees the alice<->bob match before the new block");
+    const matchesABeforeBobBlock = await api("GET", "/api/matches", { token: tokenA });
+    const countABeforeBobBlock = matchesABeforeBobBlock.data.matches.length; // alice<->bob and alice<->carol by now
+
+    const bobBlocksAlice = await api("POST", "/api/blocks", { token: tokenB, json: { userId: meA.data.user.id } });
+    assert(bobBlocksAlice.status === 201, "bob blocks alice");
+
+    const matchesBAfter = await api("GET", "/api/matches", { token: tokenB });
+    assert(matchesBAfter.data.matches.length === 0, "existing match hidden from B's /api/matches after blocking A");
+    const matchesAAfterBobBlock = await api("GET", "/api/matches", { token: tokenA });
+    assert(
+      matchesAAfterBobBlock.data.matches.length === countABeforeBobBlock - 1 &&
+        !matchesAAfterBobBlock.data.matches.some((m) => m.otherUser && m.otherUser.id === meB.data.user.id),
+      "alice<->bob match hidden from A's /api/matches too (block is mutual), other matches unaffected"
+    );
+
+    const chatBlocked = await api("GET", `/api/conversations/${conversationId}/messages`, { token: tokenA });
+    assert(chatBlocked.status === 404, "chat endpoint hides conversation once blocked");
+
+    const bobUnblocksAlice = await api("DELETE", `/api/blocks/${meA.data.user.id}`, { token: tokenB });
+    assert(bobUnblocksAlice.status === 200, "bob unblocks alice");
+    const matchesBRestored = await api("GET", "/api/matches", { token: tokenB });
+    assert(matchesBRestored.data.matches.length === 1, "unblocking restores the match — data was hidden, not deleted");
+
+    // --- SKIP_EMAIL_VERIFICATION beta flag: separate process, the flag is read once at module load ---
+    const skipVerifyScript = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-skip-verify.js");
+    const skipVerifyOut = execFileSync(process.execPath, [skipVerifyScript], { encoding: "utf8" });
+    assert(skipVerifyOut.includes("SKIP_EMAIL_VERIFICATION PASS"), `skip-verify subprocess failed:\n${skipVerifyOut}`);
+
+    // --- rate limiting: strict auth limiter trips under repeated hits (run last: shares the IP budget) ---
+    let sawRateLimit = false;
+    let lastAuthAttempt = null;
+    for (let i = 0; i < 8; i++) {
+      lastAuthAttempt = await api("POST", "/api/auth/login", { json: { email: "nobody@test.dev", password: "wrongpassword" } });
+      if (lastAuthAttempt.status === 429) {
+        sawRateLimit = true;
+        break;
+      }
+    }
+    assert(sawRateLimit, `expected a 429 from the auth rate limiter, got ${JSON.stringify(lastAuthAttempt)}`);
 
     console.log("ALL PASS");
     process.exitCode = 0;

@@ -28,3 +28,6 @@ server/uploads/*
 *.njsproj
 *.sln
 *.sw?
+
+# SQLite backup snapshots
+server/backups/

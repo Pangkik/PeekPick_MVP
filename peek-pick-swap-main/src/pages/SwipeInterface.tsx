@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { X, Heart, MapPin, Info, Zap, RefreshCcw, Package, User, PlusCircle, Loader2, PartyPopper } from "lucide-react";
+import { X, Heart, MapPin, Info, Zap, RefreshCcw, Package, User, PlusCircle, Loader2, PartyPopper, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { api, getToken } from "@/lib/api";
@@ -12,6 +12,7 @@ import MatchScreen from "@/components/MatchScreen";
 import BottomNav from "@/components/BottomNav";
 import Wordmark from "@/components/Wordmark";
 import ItemVisual from "@/components/ItemVisual";
+import ReportDialog from "@/components/ReportDialog";
 import type { Item, MatchOtherUser, SwipeResult } from "@/lib/types";
 
 interface MatchData {
@@ -52,6 +53,7 @@ export default function SwipeInterface() {
   const [matchData, setMatchData] = useState<MatchData | null>(null);
   const [expandInfo, setExpandInfo] = useState(false);
   const [superSwapsLeft, setSuperSwapsLeft] = useState(3);
+  const [reportOpen, setReportOpen] = useState(false);
   const dragStartX = useRef(0);
 
   const currentItem = items[currentIndex];
@@ -121,6 +123,15 @@ export default function SwipeInterface() {
       setSuperSwapsLeft((n) => n - 1);
       handleSwipe("super");
     }
+  };
+
+  const handleReportClick = () => {
+    if (!authed) {
+      toast.info("Create a free account to report items");
+      navigate("/login");
+      return;
+    }
+    setReportOpen(true);
   };
 
   const handleStartOver = async () => {
@@ -278,15 +289,30 @@ export default function SwipeInterface() {
                   />
                 </div>
 
+                {/* Report item (subtle, top-right, above drag surface) */}
+                <button
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onTouchStart={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleReportClick();
+                  }}
+                  aria-label="Report item"
+                  className="absolute top-3 right-3 z-10 w-11 h-11 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white/90 hover:text-white hover:bg-black/60 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+                  style={{ opacity: isDragging ? 0 : 1 }}
+                >
+                  <Flag className="w-4 h-4" />
+                </button>
+
                 {/* Like / Pass overlays (icons, never emoji) */}
                 <div
-                  className="absolute top-8 left-6 flex items-center gap-1.5 bg-primary/90 text-primary-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-primary rotate-[-15deg] transition-opacity duration-100"
+                  className="absolute top-8 left-6 z-20 flex items-center gap-1.5 bg-primary/90 text-primary-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-primary rotate-[-15deg] transition-opacity duration-100"
                   style={{ opacity: dragX > 20 ? Math.min((dragX - 20) / 60, 1) : 0 }}
                 >
                   <Heart className="w-4 h-4 fill-current" /> WANT
                 </div>
                 <div
-                  className="absolute top-8 right-6 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-destructive rotate-[15deg] transition-opacity duration-100"
+                  className="absolute top-8 right-6 z-20 flex items-center gap-1.5 bg-destructive/90 text-destructive-foreground font-black text-lg px-4 py-2 rounded-xl border-2 border-destructive rotate-[15deg] transition-opacity duration-100"
                   style={{ opacity: dragX < -20 ? Math.min((-dragX - 20) / 60, 1) : 0 }}
                 >
                   <X className="w-4 h-4" /> PASS
@@ -438,6 +464,16 @@ export default function SwipeInterface() {
           </div>
         )}
       </div>
+
+      {currentItem && (
+        <ReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          targetType="item"
+          targetId={currentItem.id}
+          title={`Report ${currentItem.title}`}
+        />
+      )}
 
       <BottomNav />
     </div>
