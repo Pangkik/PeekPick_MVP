@@ -18,6 +18,9 @@ const PORT = process.env.PORT || 3001;
 const UPLOAD_DIR = process.env.PEEKPICK_UPLOADS_DIR || path.join(__dirname, "uploads");
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
+// ponytail: beta-only bypass, one flag read at boot. Off by default, identical to today's behavior.
+const SKIP_EMAIL_VERIFICATION = /^(1|true)$/i.test(process.env.SKIP_EMAIL_VERIFICATION || "");
+
 const CATEGORY_IMPACT = {
   electronics: { co2Kg: 25, wasteKg: 2 },
   clothing: { co2Kg: 10, wasteKg: 0.5 },
@@ -213,6 +216,16 @@ app.post("/api/auth/signup", authLimiter, async (req, res) => {
   if (existing) return res.status(409).json({ error: "Email is already registered" });
 
   const passwordHash = bcrypt.hashSync(password, 10);
+
+  if (SKIP_EMAIL_VERIFICATION) {
+    // beta flag: no code generated, no email sent, account verified on creation
+    const info = db
+      .prepare("INSERT INTO users (email, password_hash, name, verified) VALUES (?, ?, ?, 1)")
+      .run(email, passwordHash, name || "");
+    db.prepare("INSERT OR IGNORE INTO passports (user_id) VALUES (?)").run(info.lastInsertRowid);
+    return res.status(201).json({ needsVerification: true });
+  }
+
   const code = makeCode();
   db.prepare(
     "INSERT INTO users (email, password_hash, name, verify_code) VALUES (?, ?, ?, ?)"
@@ -241,10 +254,17 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
     return res.status(401).json({ error: "Invalid email or password" });
   }
   if (!user.verified) {
-    const code = makeCode();
-    db.prepare("UPDATE users SET verify_code = ? WHERE id = ?").run(code, user.id);
-    await sendVerificationCode(email, code);
-    return res.status(403).json({ error: "Account not verified", needsVerification: true });
+    if (SKIP_EMAIL_VERIFICATION) {
+      // beta flag: auto-verify on first login instead of bouncing to the code screen
+      db.prepare("UPDATE users SET verified = 1, verify_code = NULL WHERE id = ?").run(user.id);
+      db.prepare("INSERT OR IGNORE INTO passports (user_id) VALUES (?)").run(user.id);
+      user.verified = 1;
+    } else {
+      const code = makeCode();
+      db.prepare("UPDATE users SET verify_code = ? WHERE id = ?").run(code, user.id);
+      await sendVerificationCode(email, code);
+      return res.status(403).json({ error: "Account not verified", needsVerification: true });
+    }
   }
   res.json({ token: signToken(user), user: publicUser(user) });
 });

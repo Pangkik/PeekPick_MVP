@@ -4,6 +4,8 @@
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { execFileSync } from "child_process";
+import { fileURLToPath } from "url";
 
 const dbPath = path.join(os.tmpdir(), `peekpick-test-${Date.now()}.db`);
 for (const suffix of ["", "-wal", "-shm"]) {
@@ -262,6 +264,11 @@ async function main() {
     assert(bobUnblocksAlice.status === 200, "bob unblocks alice");
     const matchesBRestored = await api("GET", "/api/matches", { token: tokenB });
     assert(matchesBRestored.data.matches.length === 1, "unblocking restores the match — data was hidden, not deleted");
+
+    // --- SKIP_EMAIL_VERIFICATION beta flag: separate process, the flag is read once at module load ---
+    const skipVerifyScript = path.join(path.dirname(fileURLToPath(import.meta.url)), "test-skip-verify.js");
+    const skipVerifyOut = execFileSync(process.execPath, [skipVerifyScript], { encoding: "utf8" });
+    assert(skipVerifyOut.includes("SKIP_EMAIL_VERIFICATION PASS"), `skip-verify subprocess failed:\n${skipVerifyOut}`);
 
     // --- rate limiting: strict auth limiter trips under repeated hits (run last: shares the IP budget) ---
     let sawRateLimit = false;
