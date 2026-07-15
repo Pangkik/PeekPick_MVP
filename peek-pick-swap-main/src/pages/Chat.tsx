@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, FormEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Send, Loader2, X, Package, ShieldAlert, ArrowLeftRight } from "lucide-react";
+import { ArrowLeft, Send, Loader2, X, Package, ShieldAlert, ArrowLeftRight, MoreVertical, Flag, UserX } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -14,6 +14,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ReportDialog from "@/components/ReportDialog";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useMe } from "@/hooks/useAuth";
@@ -39,6 +46,9 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [blockOpen, setBlockOpen] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const lastIdRef = useRef<string | undefined>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -93,6 +103,20 @@ export default function Chat() {
       toast.error(err instanceof Error ? err.message : "Couldn't send message");
     } finally {
       setSending(false);
+    }
+  };
+
+  const handleBlock = async () => {
+    if (!match) return;
+    setBlocking(true);
+    try {
+      await api.post("/api/blocks", { userId: match.otherUser.id });
+      toast.success(`${match.otherUser.name} is blocked`);
+      navigate("/matches");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't block user");
+    } finally {
+      setBlocking(false);
     }
   };
 
@@ -153,7 +177,57 @@ export default function Chat() {
             </AlertDialogContent>
           </AlertDialog>
         )}
+
+        {match && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                aria-label="Chat options"
+                className="w-11 h-11 rounded-full bg-surface-elevated border border-border flex items-center justify-center hover:bg-surface-hover transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setReportOpen(true)}>
+                <Flag className="w-4 h-4 mr-2" /> Report user
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setBlockOpen(true)} className="text-destructive focus:text-destructive">
+                <UserX className="w-4 h-4 mr-2" /> Block user
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
+
+      {match && (
+        <>
+          <AlertDialog open={blockOpen} onOpenChange={setBlockOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Block {match.otherUser.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  They won't be able to message you and this conversation will be hidden. This can't be undone from
+                  here.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleBlock} disabled={blocking}>
+                  {blocking ? <Loader2 className="w-4 h-4 animate-spin" /> : "Block"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <ReportDialog
+            open={reportOpen}
+            onOpenChange={setReportOpen}
+            targetType="user"
+            targetId={match.otherUser.id}
+            title={`Report ${match.otherUser.name}`}
+          />
+        </>
+      )}
 
       {/* Safety banner */}
       {!bannerDismissed && (

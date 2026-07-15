@@ -55,6 +55,7 @@ async function main() {
 
     const signup = await api("POST", "/api/auth/signup", { json: { email, password, name: "Skip Flag" } });
     assert(signup.status === 201, `signup status 201, got ${signup.status} ${JSON.stringify(signup.data)}`);
+    assert(signup.data.needsVerification === false, "signup needsVerification false with the flag on");
 
     const row = db.prepare("SELECT verified, verify_code FROM users WHERE email = ?").get(email);
     assert(row && row.verified === 1, "user is verified immediately with the flag on");

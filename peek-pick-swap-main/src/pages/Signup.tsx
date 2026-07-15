@@ -45,9 +45,14 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      await signup(name, email, password);
-      toast.info("Check the server console for your verification code");
-      setStep("verify");
+      const { needsVerification } = await signup(name, email, password);
+      if (needsVerification) {
+        toast.info("Check the server console for your verification code");
+        setStep("verify");
+      } else {
+        toast.success("Account created — log in to continue");
+        navigate("/login");
+      }
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Signup failed");
     } finally {

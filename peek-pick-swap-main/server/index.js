@@ -223,7 +223,7 @@ app.post("/api/auth/signup", authLimiter, async (req, res) => {
       .prepare("INSERT INTO users (email, password_hash, name, verified) VALUES (?, ?, ?, 1)")
       .run(email, passwordHash, name || "");
     db.prepare("INSERT OR IGNORE INTO passports (user_id) VALUES (?)").run(info.lastInsertRowid);
-    return res.status(201).json({ needsVerification: true });
+    return res.status(201).json({ needsVerification: false });
   }
 
   const code = makeCode();
