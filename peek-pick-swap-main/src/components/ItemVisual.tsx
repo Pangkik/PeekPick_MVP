@@ -1,25 +1,11 @@
-import {
-  Package,
-  Smartphone,
-  Shirt,
-  BookOpen,
-  Sofa,
-  Gamepad2,
-  Leaf,
-  Palette,
-  Wrench,
-  UtensilsCrossed,
-  Dumbbell,
-  Baby,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { categoryIcon } from "@/lib/categories";
 
 /**
  * Tasteful gradient + Lucide-icon placeholder for items without a real photo.
  * Used for the demo deck (logged-out browsing) and as a fallback anywhere
- * an item's photoUrls array is empty. No emoji, ever.
+ * an item's photoUrls array is empty. No emoji, ever. The icon mapping
+ * itself lives in src/lib/categories.ts (single source of truth).
  */
 
 export const CARD_GRADIENTS = [
@@ -29,25 +15,6 @@ export const CARD_GRADIENTS = [
   "from-primary/20 to-secondary/25",
   "from-accent/20 to-primary/25",
 ];
-
-const CATEGORY_ICONS: Record<string, LucideIcon> = {
-  electronics: Smartphone,
-  clothing: Shirt,
-  books: BookOpen,
-  home: Sofa,
-  games: Gamepad2,
-  plants: Leaf,
-  art: Palette,
-  tools: Wrench,
-  food: UtensilsCrossed,
-  sports: Dumbbell,
-  baby: Baby,
-  beauty: Sparkles,
-};
-
-export function categoryIcon(category: string): LucideIcon {
-  return CATEGORY_ICONS[category] ?? Package;
-}
 
 interface ItemVisualProps {
   category: string;

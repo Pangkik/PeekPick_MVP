@@ -88,13 +88,13 @@ export default function AddItem() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
+    <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4">
         <button
           onClick={() => navigate(-1)}
           aria-label="Go back"
-          className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center hover:bg-surface-hover transition-colors"
+          className="w-11 h-11 rounded-full bg-surface-elevated border border-border flex items-center justify-center hover:bg-surface-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -113,7 +113,7 @@ export default function AddItem() {
                   type="button"
                   onClick={() => removePhoto(i)}
                   aria-label={`Remove photo ${i + 1}`}
-                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-black/90 transition-colors"
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-black/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
                 >
                   <XIcon className="w-3.5 h-3.5" />
                 </button>
@@ -124,7 +124,7 @@ export default function AddItem() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Add photo"
-                className="aspect-square rounded-2xl border border-dashed border-border bg-surface-elevated flex items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                className="aspect-square rounded-2xl border border-dashed border-border bg-surface-elevated flex items-center justify-center text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Camera className="w-6 h-6" />
               </button>
@@ -157,22 +157,26 @@ export default function AddItem() {
         <div className="space-y-2">
           <Label>Category</Label>
           <div className="grid grid-cols-2 gap-2">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.id)}
-                className={cn(
-                  "flex items-center gap-2 rounded-2xl p-3 border text-left text-sm font-semibold transition-all min-h-11",
-                  category === cat.id
-                    ? "bg-primary border-primary text-primary-foreground shadow-green"
-                    : "bg-surface-elevated border-border text-foreground hover:border-primary/50"
-                )}
-              >
-                <span className="text-lg flex-shrink-0">{cat.icon}</span>
-                <span className="leading-tight">{cat.label}</span>
-              </button>
-            ))}
+            {CATEGORIES.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategory(cat.id)}
+                  aria-pressed={category === cat.id}
+                  className={cn(
+                    "flex items-center gap-2 rounded-2xl p-3 border text-left text-sm font-semibold transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                    category === cat.id
+                      ? "bg-primary border-primary text-primary-foreground shadow-green"
+                      : "bg-surface-elevated border-border text-foreground hover:border-primary/50"
+                  )}
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+                  <span className="leading-tight">{cat.label}</span>
+                </button>
+              );
+            })}
           </div>
           {errors.category && <p role="alert" className="text-sm text-destructive">{errors.category}</p>}
         </div>
@@ -186,8 +190,9 @@ export default function AddItem() {
                 key={c.id}
                 type="button"
                 onClick={() => setCondition(c.id)}
+                aria-pressed={condition === c.id}
                 className={cn(
-                  "rounded-2xl p-3 border text-left transition-all min-h-11",
+                  "rounded-2xl p-3 border text-left transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   condition === c.id
                     ? "bg-primary border-primary text-primary-foreground shadow-green"
                     : "bg-surface-elevated border-border hover:border-primary/40"
@@ -223,20 +228,22 @@ export default function AddItem() {
           <div className="flex flex-wrap gap-2">
             {CATEGORIES.map((cat) => {
               const selected = wants.includes(cat.id);
+              const Icon = cat.icon;
               return (
                 <button
                   key={cat.id}
                   type="button"
                   onClick={() => toggleWant(cat.id)}
+                  aria-pressed={selected}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold border transition-all min-h-11",
+                    "flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold border transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                     selected
                       ? "bg-primary border-primary text-primary-foreground"
                       : "bg-surface-elevated border-border text-foreground hover:border-primary/50"
                   )}
                 >
-                  {selected && <Check className="w-3.5 h-3.5" />}
-                  {cat.icon} {cat.label}
+                  {selected ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" aria-hidden="true" />}
+                  {cat.label}
                 </button>
               );
             })}
@@ -252,7 +259,7 @@ export default function AddItem() {
         <button
           type="submit"
           disabled={submitting}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-lg py-4 rounded-full shadow-green hover:bg-primary-glow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-11"
+          className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold text-lg py-4 rounded-full shadow-green hover:bg-primary-glow transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           {submitting && <Loader2 className="w-5 h-5 animate-spin" />}
           List Item

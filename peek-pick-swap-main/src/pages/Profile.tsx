@@ -106,13 +106,13 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
+    <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
         <Wordmark size="sm" rest="rofile" />
         <button
           onClick={logout}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors min-h-11 px-2"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive transition-colors min-h-11 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded"
         >
           <LogOut className="w-4 h-4" /> Log out
         </button>
@@ -149,7 +149,7 @@ export default function Profile() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-full shadow-green hover:bg-primary-glow transition-all disabled:opacity-50 min-h-11"
+                      className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold py-2.5 rounded-full shadow-green hover:bg-primary-glow transition-all disabled:opacity-50 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                       Save
@@ -157,7 +157,7 @@ export default function Profile() {
                     <button
                       type="button"
                       onClick={() => setEditing(false)}
-                      className="flex-1 bg-surface border border-border font-bold py-2.5 rounded-full hover:bg-surface-hover transition-all min-h-11"
+                      className="flex-1 bg-surface border border-border font-bold py-2.5 rounded-full hover:bg-surface-hover transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       Cancel
                     </button>
@@ -173,7 +173,7 @@ export default function Profile() {
                   <button
                     onClick={startEditing}
                     aria-label="Edit profile"
-                    className="w-10 h-10 rounded-full bg-surface flex items-center justify-center hover:bg-surface-hover transition-colors flex-shrink-0"
+                    className="w-11 h-11 rounded-full bg-surface flex items-center justify-center hover:bg-surface-hover transition-colors flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
@@ -269,7 +269,7 @@ export default function Profile() {
                           <button
                             aria-label={`Delete ${item.title}`}
                             disabled={deletingId === item.id}
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0 disabled:opacity-50"
+                            className="w-11 h-11 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                           >
                             {deletingId === item.id ? (
                               <Loader2 className="w-4 h-4 animate-spin" />

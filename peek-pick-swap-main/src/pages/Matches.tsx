@@ -27,7 +27,7 @@ export default function Matches() {
   const matches = data?.matches ?? [];
 
   return (
-    <div className="min-h-screen bg-background flex flex-col max-w-md mx-auto">
+    <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export default function Matches() {
             <p className="text-muted-foreground">{error instanceof Error ? error.message : "Couldn't load matches"}</p>
             <button
               onClick={() => refetch()}
-              className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all min-h-11"
+              className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               <RefreshCcw className={isFetching ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Try again
             </button>
@@ -62,7 +62,7 @@ export default function Matches() {
             </div>
             <button
               onClick={() => navigate("/swipe")}
-              className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-full shadow-green hover:bg-primary-glow transition-all min-h-11"
+              className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-full shadow-green hover:bg-primary-glow transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Keep Swiping
             </button>
@@ -73,7 +73,7 @@ export default function Matches() {
               <button
                 key={m.conversationId}
                 onClick={() => navigate(`/chat/${m.conversationId}`)}
-                className="w-full flex items-center gap-3 bg-surface-elevated border border-border rounded-2xl p-3 text-left hover:border-primary/40 transition-all min-h-11"
+                className="w-full flex items-center gap-3 bg-surface-elevated border border-border rounded-2xl p-3 text-left hover:border-primary/40 transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <div className="flex -space-x-3 flex-shrink-0">
                   <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-surface-elevated relative z-10">
