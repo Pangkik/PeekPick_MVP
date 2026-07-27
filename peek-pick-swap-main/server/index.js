@@ -228,7 +228,9 @@ function makeCode() {
 // Falls back to console.log (local dev, or if Resend is unset/unreachable) so a
 // broken email provider never blocks signup/login.
 async function sendVerificationCode(email, code) {
-  const apiKey = process.env.RESEND_API_KEY;
+  // ponytail: accept either casing — env vars are case-sensitive on Linux and a
+  // lowercase key in the host dashboard silently disables all outbound email.
+  const apiKey = process.env.RESEND_API_KEY || process.env.resend_api_key;
   if (!apiKey) {
     console.log(`[PeekPick] Verification code for ${email}: ${code}`);
     return;

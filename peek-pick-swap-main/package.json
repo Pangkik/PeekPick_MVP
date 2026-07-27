@@ -15,7 +15,8 @@
     "server": "node server/index.js",
     "seed": "node server/seed.js",
     "test:server": "node server/test.js",
-    "backup": "node server/backup.js"
+    "backup": "node server/backup.js",
+    "purge-demo": "node server/purge-demo.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
