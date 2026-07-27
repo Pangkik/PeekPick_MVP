@@ -103,6 +103,42 @@ CREATE TABLE IF NOT EXISTS blocks (
   created_at TEXT DEFAULT current_timestamp,
   PRIMARY KEY (blocker_id, blocked_id)
 );
+
+CREATE TABLE IF NOT EXISTS offers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id INTEGER NOT NULL REFERENCES conversations(id),
+  from_user_id INTEGER NOT NULL REFERENCES users(id),
+  offer_item_id INTEGER REFERENCES items(id),
+  cash_amount REAL DEFAULT 0,
+  note TEXT DEFAULT '',
+  status TEXT DEFAULT 'pending',
+  created_at TEXT DEFAULT current_timestamp
+);
+
+CREATE TABLE IF NOT EXISTS ratings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  trade_id INTEGER NOT NULL REFERENCES trades(id),
+  rater_id INTEGER NOT NULL REFERENCES users(id),
+  ratee_id INTEGER NOT NULL REFERENCES users(id),
+  stars INTEGER NOT NULL,
+  comment TEXT DEFAULT '',
+  created_at TEXT DEFAULT current_timestamp,
+  UNIQUE(trade_id, rater_id)
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  endpoint TEXT UNIQUE NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  created_at TEXT DEFAULT current_timestamp
+);
 `);
 
 export default db;

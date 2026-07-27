@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { Package, RefreshCcw, ArrowLeftRight } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Package, RefreshCcw, ArrowLeftRight, Star } from "lucide-react";
 import { api } from "@/lib/api";
 import type { Match } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
+import RatingDialog from "@/components/RatingDialog";
 
 function ItemThumb({ photoUrl, alt }: { photoUrl?: string; alt: string }) {
   if (photoUrl) {
@@ -18,6 +20,7 @@ function ItemThumb({ photoUrl, alt }: { photoUrl?: string; alt: string }) {
 
 export default function Matches() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery<{ matches: Match[] }>({
     queryKey: ["matches"],
@@ -25,6 +28,7 @@ export default function Matches() {
   });
 
   const matches = data?.matches ?? [];
+  const [ratingTarget, setRatingTarget] = useState<{ tradeId: string; otherUserName: string } | null>(null);
 
   return (
     <div className="min-h-dvh bg-background flex flex-col max-w-md mx-auto">
@@ -70,41 +74,61 @@ export default function Matches() {
         ) : (
           <div className="space-y-3 pt-2">
             {matches.map((m) => (
-              <button
-                key={m.conversationId}
-                onClick={() => navigate(`/chat/${m.conversationId}`)}
-                className="w-full flex items-center gap-3 bg-surface-elevated border border-border rounded-2xl p-3 text-left hover:border-primary/40 transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
-                <div className="flex -space-x-3 flex-shrink-0">
-                  <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-surface-elevated relative z-10">
-                    <ItemThumb photoUrl={m.theirItem.photoUrls[0]} alt={m.theirItem.title} />
+              <div key={m.conversationId} className="space-y-1.5">
+                <button
+                  onClick={() => navigate(`/chat/${m.conversationId}`)}
+                  className="w-full flex items-center gap-3 bg-surface-elevated border border-border rounded-2xl p-3 text-left hover:border-primary/40 transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                  <div className="flex -space-x-3 flex-shrink-0">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-surface-elevated relative z-10">
+                      <ItemThumb photoUrl={m.theirItem.photoUrls[0]} alt={m.theirItem.title} />
+                    </div>
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-surface-elevated">
+                      <ItemThumb photoUrl={m.myItem.photoUrls[0]} alt={m.myItem.title} />
+                    </div>
                   </div>
-                  <div className="w-14 h-14 rounded-xl overflow-hidden border-2 border-surface-elevated">
-                    <ItemThumb photoUrl={m.myItem.photoUrls[0]} alt={m.myItem.title} />
-                  </div>
-                </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-sm truncate">{m.otherUser.name}</span>
-                    {m.trade.status && (
-                      <span className="text-[10px] uppercase tracking-wide text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5 flex-shrink-0">
-                        {m.trade.status}
-                      </span>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-sm truncate">{m.otherUser.name}</span>
+                      {m.trade.status && (
+                        <span className="text-[10px] uppercase tracking-wide text-primary bg-primary/10 border border-primary/30 rounded-full px-2 py-0.5 flex-shrink-0">
+                          {m.trade.status}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {m.theirItem.title} <ArrowLeftRight className="w-3 h-3 inline mx-1" /> {m.myItem.title}
+                    </p>
+                    <p className="text-sm text-foreground/80 truncate mt-0.5">
+                      {m.lastMessage ? m.lastMessage.content : "Say hi and plan your swap!"}
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {m.theirItem.title} <ArrowLeftRight className="w-3 h-3 inline mx-1" /> {m.myItem.title}
-                  </p>
-                  <p className="text-sm text-foreground/80 truncate mt-0.5">
-                    {m.lastMessage ? m.lastMessage.content : "Say hi and plan your swap!"}
-                  </p>
-                </div>
-              </button>
+                </button>
+
+                {m.trade.status === "completed" && !m.myRating && (
+                  <button
+                    onClick={() => setRatingTarget({ tradeId: m.trade.id, otherUserName: m.otherUser.name })}
+                    className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline min-h-11 px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded"
+                  >
+                    <Star className="w-3.5 h-3.5" /> Rate this trade
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {ratingTarget && (
+        <RatingDialog
+          open={!!ratingTarget}
+          onOpenChange={(open) => !open && setRatingTarget(null)}
+          tradeId={ratingTarget.tradeId}
+          otherUserName={ratingTarget.otherUserName}
+          onRated={() => queryClient.invalidateQueries({ queryKey: ["matches"] })}
+        />
+      )}
 
       <BottomNav />
     </div>

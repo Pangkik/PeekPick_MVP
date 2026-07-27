@@ -1,10 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { X, Heart, MapPin, Info, Zap, RefreshCcw, Package, User, PlusCircle, Loader2, PartyPopper, Flag } from "lucide-react";
+import {
+  X,
+  Heart,
+  MapPin,
+  Info,
+  Zap,
+  RefreshCcw,
+  Package,
+  User,
+  PlusCircle,
+  Loader2,
+  PartyPopper,
+  Flag,
+  MoonStar,
+  MessageCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { api, getToken } from "@/lib/api";
+import { api, getToken, ApiError } from "@/lib/api";
 import { useMe } from "@/hooks/useAuth";
 import { CATEGORIES, CONDITIONS, labelFor } from "@/lib/categories";
 import { DEMO_ITEMS } from "@/lib/demoItems";
@@ -13,7 +28,11 @@ import BottomNav from "@/components/BottomNav";
 import Wordmark from "@/components/Wordmark";
 import ItemVisual from "@/components/ItemVisual";
 import ReportDialog from "@/components/ReportDialog";
+import { RatingStars } from "@/components/RatingDialog";
+import { pushSupported, isPushEnabled, enablePush } from "@/lib/push";
 import type { Item, MatchOtherUser, SwipeResult } from "@/lib/types";
+
+const PUSH_PROMPT_DISMISSED_KEY = "peekpick_push_prompt_dismissed";
 
 interface MatchData {
   myItem: Item;
@@ -54,7 +73,16 @@ export default function SwipeInterface() {
   const [expandInfo, setExpandInfo] = useState(false);
   const [superSwapsLeft, setSuperSwapsLeft] = useState(3);
   const [reportOpen, setReportOpen] = useState(false);
+  const [swipesRemaining, setSwipesRemaining] = useState<number | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const dragStartX = useRef(0);
+
+  useEffect(() => {
+    if (authed && me && typeof me.swipesRemaining === "number") {
+      setSwipesRemaining(me.swipesRemaining);
+      if (me.swipesRemaining <= 0) setLimitReached(true);
+    }
+  }, [authed, me]);
 
   const currentItem = items[currentIndex];
   const nextItem = items[currentIndex + 1];
@@ -97,12 +125,25 @@ export default function SwipeInterface() {
     const swipePromise = api
       .post<SwipeResult>("/api/swipes", { itemId: currentItem.id, direction })
       .catch((err) => {
+        if (err instanceof ApiError && err.status === 429) {
+          const data = err.data as { swipesRemaining?: number; limitReached?: boolean } | null;
+          return { matched: false, swipesRemaining: data?.swipesRemaining ?? 0, limitReached: true } as SwipeResult;
+        }
         toast.error(err instanceof Error ? err.message : "Couldn't record swipe");
         return { matched: false } as SwipeResult;
       });
 
     setTimeout(async () => {
       const result = await swipePromise;
+      if (typeof result.swipesRemaining === "number") setSwipesRemaining(result.swipesRemaining);
+
+      if (result.limitReached) {
+        setLimitReached(true);
+        setSwipeAnim(null);
+        setDragX(0);
+        return;
+      }
+
       if (result.matched && result.myItem && result.theirItem && result.otherUser && result.conversationId) {
         setMatchData({
           myItem: result.myItem,
@@ -111,11 +152,29 @@ export default function SwipeInterface() {
           conversationId: result.conversationId,
         });
         setShowMatch(true);
+        maybePromptPush();
       }
       setCurrentIndex((i) => i + 1);
       setSwipeAnim(null);
       setDragX(0);
     }, 300);
+  };
+
+  const maybePromptPush = async () => {
+    if (localStorage.getItem(PUSH_PROMPT_DISMISSED_KEY)) return;
+    if (!pushSupported()) return;
+    if (await isPushEnabled()) return;
+    localStorage.setItem(PUSH_PROMPT_DISMISSED_KEY, "1");
+    toast("Get notified about matches and messages?", {
+      duration: 8000,
+      action: {
+        label: "Enable",
+        onClick: async () => {
+          const ok = await enablePush();
+          toast[ok ? "success" : "error"](ok ? "Push notifications enabled" : "Couldn't enable push notifications");
+        },
+      },
+    });
   };
 
   const handleSuperSwap = () => {
@@ -248,6 +307,29 @@ export default function SwipeInterface() {
               <RefreshCcw className={isFetching ? "w-4 h-4 animate-spin" : "w-4 h-4"} /> Try again
             </button>
           </div>
+        ) : authed && limitReached ? (
+          /* Daily swipe limit reached — keep the user oriented instead of an empty deck */
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-6">
+            <MoonStar className="w-16 h-16 text-primary animate-float" aria-hidden="true" />
+            <div>
+              <h2 className="text-2xl font-black mb-2">You're out of swipes for today</h2>
+              <p className="text-muted-foreground">Come back tomorrow for a fresh deck.</p>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <button
+                onClick={() => navigate("/matches")}
+                className="flex items-center gap-2 bg-surface-elevated border border-primary/40 text-primary font-bold px-6 py-3 rounded-full hover:bg-primary hover:text-primary-foreground transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <MessageCircle className="w-4 h-4" /> View matches
+              </button>
+              <button
+                onClick={() => navigate("/add-item")}
+                className="flex items-center gap-2 bg-primary text-primary-foreground font-bold px-6 py-3 rounded-full shadow-green hover:bg-primary-glow transition-all min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                <PlusCircle className="w-4 h-4" /> List an item
+              </button>
+            </div>
+          </div>
         ) : currentIndex < items.length ? (
           <>
             {/* Card stack */}
@@ -339,6 +421,7 @@ export default function SwipeInterface() {
                         <User className="w-4 h-4 text-white/70" />
                       )}
                       <span className="text-sm font-semibold text-white/90">{currentItem.owner.name}</span>
+                      <RatingStars rating={currentItem.owner.rating} className="text-white/70" />
                     </div>
                     {currentItem.owner.location && (
                       <div className="flex items-center gap-1 text-xs text-white/60">
@@ -414,6 +497,16 @@ export default function SwipeInterface() {
             <div className="mt-4 text-xs text-muted-foreground text-center">
               <span className="text-swipe-super font-bold">{superSwapsLeft}</span> Super Swaps remaining today
             </div>
+            {authed && swipesRemaining !== null && (
+              <div
+                className={cn(
+                  "mt-1 text-xs text-center",
+                  swipesRemaining <= 5 ? "text-destructive font-semibold" : "text-muted-foreground"
+                )}
+              >
+                {swipesRemaining} swipes left today
+              </div>
+            )}
 
             {/* Stack counter */}
             <div className="mt-2 flex gap-1.5">

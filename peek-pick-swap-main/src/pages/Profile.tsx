@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Pencil,
@@ -12,12 +12,14 @@ import {
   Trash2,
   Recycle,
   Cloud,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import Wordmark from "@/components/Wordmark";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,8 +35,11 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useMe, useAuthActions } from "@/hooks/useAuth";
+import { RatingStars } from "@/components/RatingDialog";
+import { pushSupported, isPushEnabled, enablePush, disablePush } from "@/lib/push";
 import type { Item } from "@/lib/types";
 import BottomNav from "@/components/BottomNav";
+import PassportShare from "@/components/PassportShare";
 
 const BADGE_META: Record<string, { label: string; icon: typeof Sprout }> = {
   "first-swap": { label: "First Swap", icon: Sprout },
@@ -68,6 +73,32 @@ export default function Profile() {
   });
   const myItems = itemsData?.items ?? [];
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const pushAvailable = pushSupported();
+
+  useEffect(() => {
+    if (!pushAvailable) return;
+    isPushEnabled().then(setPushEnabled);
+  }, [pushAvailable]);
+
+  const handleTogglePush = async (checked: boolean) => {
+    if (!checked) {
+      setPushEnabled(false);
+      await disablePush();
+      return;
+    }
+    setPushBusy(true);
+    try {
+      const ok = await enablePush();
+      setPushEnabled(ok);
+      if (ok) toast.success("Push notifications enabled");
+      else toast.error("Couldn't enable push notifications");
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const startEditing = () => {
     if (!me) return;
@@ -169,7 +200,8 @@ export default function Profile() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h1 className="text-xl font-black truncate">{me.user.name}</h1>
-                    {me.user.location && <p className="text-sm text-muted-foreground">{me.user.location}</p>}
+                    <RatingStars rating={me.user.rating} className="text-muted-foreground mt-0.5" />
+                    {me.user.location && <p className="text-sm text-muted-foreground mt-1">{me.user.location}</p>}
                     {me.user.bio && <p className="text-sm text-foreground/80 mt-2 leading-relaxed">{me.user.bio}</p>}
                   </div>
                   <button
@@ -204,11 +236,11 @@ export default function Profile() {
                   </div>
                   <div className="text-center bg-surface/60 rounded-2xl p-3">
                     <div className="text-2xl font-black gradient-text">{me.passport.co2SavedKg}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">kg CO₂ Saved</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">kg CO₂ Saved*</div>
                   </div>
                   <div className="text-center bg-surface/60 rounded-2xl p-3">
                     <div className="text-2xl font-black gradient-text">{me.passport.wasteDivertedKg}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">kg Waste Diverted</div>
+                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">kg Waste Diverted*</div>
                   </div>
                 </div>
 
@@ -231,7 +263,42 @@ export default function Profile() {
                     <Cloud className="w-3.5 h-3.5" /> Complete your first trade to earn a badge.
                   </p>
                 )}
+
+                <p className="text-[10px] text-muted-foreground mt-4 leading-relaxed">
+                  *Estimated. Each category uses a conservative per-item figure based on
+                  published reuse research (WRAP, INTEXTER). Real impact varies by item —
+                  we'd rather understate it than overstate it.
+                </p>
+
+                <PassportShare passport={me.passport} name={me.user.name} />
               </div>
+            </div>
+
+            {/* Notification settings */}
+            <div className="flex items-center justify-between gap-3 bg-surface-elevated border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                  <Bell className="w-4 h-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-bold text-sm">Push notifications</p>
+                  <p className="text-xs text-muted-foreground">
+                    {pushAvailable
+                      ? "Get notified about matches and messages"
+                      : "Not supported in this browser"}
+                  </p>
+                </div>
+              </div>
+              {pushBusy ? (
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground flex-shrink-0" />
+              ) : (
+                <Switch
+                  checked={pushEnabled}
+                  onCheckedChange={handleTogglePush}
+                  disabled={!pushAvailable}
+                  aria-label="Toggle push notifications"
+                />
+              )}
             </div>
 
             {/* My items */}

@@ -8,7 +8,9 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import multer from "multer";
+import webpush from "web-push";
 import db from "./db.js";
+import { maybeBackup } from "./backup.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,6 +23,22 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 // ponytail: beta-only bypass, one flag read at boot. Off by default, identical to today's behavior.
 const SKIP_EMAIL_VERIFICATION = /^(1|true)$/i.test(process.env.SKIP_EMAIL_VERIFICATION || "");
 
+// ponytail: env override lets test.js use a tiny limit instead of swiping 50 times to hit it
+const DAILY_SWIPE_LIMIT = Number(process.env.DAILY_SWIPE_LIMIT) || 50;
+
+// Deliberately CONSERVATIVE per-item estimates for reuse instead of buying new.
+// These are order-of-magnitude figures, not measurements — always present them to
+// users as "estimated". Anchored against published reuse LCA work:
+//   - WRAP: ~11 t CO2e saved per tonne of textiles reused → ~5kg for a ~0.5kg garment;
+//     UPC/INTEXTER (2022) puts it far higher (~25kg per kg), so 10kg/garment sits low
+//     in the published range rather than flattering us.
+//   - WRAP: ~1.05 t CO2e per tonne of sofas (~40kg per sofa) — our 8kg "home" figure is
+//     well under that, since most home items are far smaller than a sofa.
+//   - Consumer electronics manufacturing runs ~55-70kg CO2e for a phone and 200kg+ for
+//     a laptop, so 25kg for "electronics" is conservative for the category.
+// ponytail: flat per-category constants, not per-item weight/model lookups. If the
+// Passport ever needs to withstand external scrutiny (scholarships, CSR reporting),
+// replace with a sourced per-category factor table and cite it in-app.
 const CATEGORY_IMPACT = {
   electronics: { co2Kg: 25, wasteKg: 2 },
   clothing: { co2Kg: 10, wasteKg: 0.5 },
@@ -42,6 +60,51 @@ const BADGE_THRESHOLDS = [
   [10, "eco-warrior"],
   [25, "super-trader"],
 ];
+
+function getSetting(key) {
+  const row = db.prepare("SELECT value FROM settings WHERE key = ?").get(key);
+  return row ? row.value : null;
+}
+function setSetting(key, value) {
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"
+  ).run(key, value);
+}
+
+// ponytail: self-generated VAPID keys stored in db, set env vars to rotate
+let VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+let VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+  VAPID_PUBLIC_KEY = getSetting("vapid_public_key");
+  VAPID_PRIVATE_KEY = getSetting("vapid_private_key");
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    const generated = webpush.generateVAPIDKeys();
+    VAPID_PUBLIC_KEY = generated.publicKey;
+    VAPID_PRIVATE_KEY = generated.privateKey;
+    setSetting("vapid_public_key", VAPID_PUBLIC_KEY);
+    setSetting("vapid_private_key", VAPID_PRIVATE_KEY);
+  }
+}
+webpush.setVapidDetails("mailto:support@peekpick.app", VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+
+// fire-and-forget push notification; never blocks or fails the calling request
+function sendPush(userId, { title, body, url }) {
+  const subs = db.prepare("SELECT * FROM push_subscriptions WHERE user_id = ?").all(userId);
+  for (const sub of subs) {
+    const subscription = { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } };
+    try {
+      webpush
+        .sendNotification(subscription, JSON.stringify({ title, body, url }))
+        .catch((err) => {
+          if (err && (err.statusCode === 404 || err.statusCode === 410)) {
+            db.prepare("DELETE FROM push_subscriptions WHERE id = ?").run(sub.id);
+          }
+        });
+    } catch {
+      // never let a push failure affect the caller
+    }
+  }
+}
 
 const app = express();
 app.set("trust proxy", 1);
@@ -72,6 +135,12 @@ const absUrl = (u) => (u && u.startsWith("/") ? publicBase + u : u);
 
 // ---------- helpers ----------
 
+// ponytail: per-call aggregate, add a cached column if profile load gets slow
+function userRating(userId) {
+  const row = db.prepare("SELECT AVG(stars) AS avg, COUNT(*) AS count FROM ratings WHERE ratee_id = ?").get(userId);
+  return { average: row.count ? Math.round(row.avg * 10) / 10 : 0, count: row.count };
+}
+
 function publicUser(row) {
   if (!row) return null;
   return {
@@ -82,6 +151,7 @@ function publicUser(row) {
     location: row.location || "",
     avatarUrl: absUrl(row.avatar_url || ""),
     verified: !!row.verified,
+    rating: userRating(row.id),
   };
 }
 
@@ -98,8 +168,28 @@ function publicItem(row) {
     available: !!row.available,
     createdAt: row.created_at,
     owner: owner
-      ? { id: owner.id, name: owner.name, avatarUrl: absUrl(owner.avatar_url || ""), location: owner.location || "" }
+      ? {
+          id: owner.id,
+          name: owner.name,
+          avatarUrl: absUrl(owner.avatar_url || ""),
+          location: owner.location || "",
+          rating: userRating(owner.id),
+        }
       : null,
+  };
+}
+
+function publicOffer(row) {
+  const offerItem = row.offer_item_id ? db.prepare("SELECT * FROM items WHERE id = ?").get(row.offer_item_id) : null;
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    fromUserId: row.from_user_id,
+    offerItem: offerItem ? publicItem(offerItem) : null,
+    cashAmount: row.cash_amount,
+    note: row.note || "",
+    status: row.status,
+    createdAt: row.created_at,
   };
 }
 
@@ -115,6 +205,19 @@ function publicPassport(row) {
 
 function badgesForCount(count) {
   return BADGE_THRESHOLDS.filter(([n]) => count >= n).map(([, name]) => name);
+}
+
+// ponytail: UTC day boundary, switch to per-user timezone if users complain
+function todaySwipeCount(userId) {
+  return db
+    .prepare(
+      `SELECT COUNT(*) AS c FROM swipes
+       WHERE user_id = ? AND direction IN ('right','super') AND date(created_at) = date('now')`
+    )
+    .get(userId).c;
+}
+function swipesRemainingFor(userId) {
+  return Math.max(0, DAILY_SWIPE_LIMIT - todaySwipeCount(userId));
 }
 
 function makeCode() {
@@ -286,6 +389,7 @@ app.get("/api/me", requireAuth, (req, res) => {
         }
       : null,
     passport: publicPassport(passport),
+    swipesRemaining: swipesRemainingFor(req.user.id),
   });
 });
 
@@ -425,12 +529,23 @@ app.post("/api/swipes", requireAuth, (req, res) => {
     return res.status(403).json({ error: "Cannot interact with this user" });
   }
 
+  const isNewSwipe = !db.prepare("SELECT id FROM swipes WHERE user_id = ? AND item_id = ?").get(req.user.id, itemId);
+  if (isNewSwipe && direction !== "left" && todaySwipeCount(req.user.id) >= DAILY_SWIPE_LIMIT) {
+    return res.status(429).json({
+      error: "You're out of swipes for today. Come back tomorrow!",
+      swipesRemaining: 0,
+      limitReached: true,
+    });
+  }
+
   db.prepare(
     `INSERT INTO swipes (user_id, item_id, direction) VALUES (?, ?, ?)
      ON CONFLICT(user_id, item_id) DO UPDATE SET direction = excluded.direction`
   ).run(req.user.id, itemId, direction);
 
-  if (direction === "left") return res.json({ matched: false });
+  const swipesRemaining = swipesRemainingFor(req.user.id);
+
+  if (direction === "left") return res.json({ matched: false, swipesRemaining });
 
   const myAvailableItemIds = db
     .prepare("SELECT id FROM items WHERE user_id = ? AND available = 1")
@@ -438,7 +553,7 @@ app.post("/api/swipes", requireAuth, (req, res) => {
     .map((r) => r.id);
 
   const priorSwipe = findMutualMatch(req.user.id, item.user_id, myAvailableItemIds);
-  if (!priorSwipe) return res.json({ matched: false });
+  if (!priorSwipe) return res.json({ matched: false, swipesRemaining });
 
   const item1Id = priorSwipe.item_id; // owned by me (requester)
   const item2Id = item.id; // owned by them (owner)
@@ -450,7 +565,9 @@ app.post("/api/swipes", requireAuth, (req, res) => {
     )
     .get(item1Id, item2Id, item2Id, item1Id);
 
+  let isNewTrade = false;
   if (!trade) {
+    isNewTrade = true;
     const info = db
       .prepare(
         `INSERT INTO trades (user1_id, user2_id, item1_id, item2_id) VALUES (?, ?, ?, ?)`
@@ -469,6 +586,19 @@ app.post("/api/swipes", requireAuth, (req, res) => {
   );
   const otherUserRow = db.prepare("SELECT * FROM users WHERE id = ?").get(item.user_id);
 
+  if (isNewTrade) {
+    sendPush(req.user.id, {
+      title: "It's a match! 🎉",
+      body: `You and ${otherUserRow.name} both want to swap`,
+      url: `/chat/${conversation.id}`,
+    });
+    sendPush(item.user_id, {
+      title: "It's a match! 🎉",
+      body: `You and ${req.user.name} both want to swap`,
+      url: `/chat/${conversation.id}`,
+    });
+  }
+
   res.json({
     matched: true,
     trade: { id: trade.id, status: trade.status, createdAt: trade.created_at },
@@ -476,6 +606,7 @@ app.post("/api/swipes", requireAuth, (req, res) => {
     myItem: publicItem(myItemRow),
     theirItem: publicItem(theirItemRow),
     otherUser: publicUser(otherUserRow),
+    swipesRemaining,
   });
 });
 
@@ -500,17 +631,27 @@ app.get("/api/matches", requireAuth, (req, res) => {
           .prepare("SELECT * FROM messages WHERE conversation_id = ? ORDER BY id DESC LIMIT 1")
           .get(conversation.id)
       : null;
+    const myRatingRow = db.prepare("SELECT * FROM ratings WHERE trade_id = ? AND rater_id = ?").get(trade.id, req.user.id);
 
     return {
       trade: { id: trade.id, status: trade.status, createdAt: trade.created_at },
       myItem: myItemRow ? publicItem(myItemRow) : null,
       theirItem: theirItemRow ? publicItem(theirItemRow) : null,
       otherUser: otherUserRow
-        ? { id: otherUserRow.id, name: otherUserRow.name, avatarUrl: otherUserRow.avatar_url || "", location: otherUserRow.location || "" }
+        ? {
+            id: otherUserRow.id,
+            name: otherUserRow.name,
+            avatarUrl: otherUserRow.avatar_url || "",
+            location: otherUserRow.location || "",
+            rating: userRating(otherUserRow.id),
+          }
         : null,
       conversationId: conversation ? conversation.id : null,
       lastMessage: lastMessage
         ? { content: lastMessage.content, senderId: lastMessage.sender_id, createdAt: lastMessage.created_at }
+        : null,
+      myRating: myRatingRow
+        ? { id: myRatingRow.id, stars: myRatingRow.stars, comment: myRatingRow.comment, createdAt: myRatingRow.created_at }
         : null,
     };
   });
@@ -552,7 +693,111 @@ app.post("/api/conversations/:id/messages", requireAuth, (req, res) => {
     .prepare("INSERT INTO messages (conversation_id, sender_id, content) VALUES (?, ?, ?)")
     .run(conversation.id, req.user.id, content);
   const row = db.prepare("SELECT * FROM messages WHERE id = ?").get(info.lastInsertRowid);
+
+  const trade = db.prepare("SELECT * FROM trades WHERE id = ?").get(conversation.trade_id);
+  const recipientId = trade.user1_id === req.user.id ? trade.user2_id : trade.user1_id;
+  sendPush(recipientId, {
+    title: req.user.name,
+    body: content.length > 80 ? content.slice(0, 80) : content,
+    url: `/chat/${conversation.id}`,
+  });
+
   res.status(201).json({ message: { id: row.id, senderId: row.sender_id, content: row.content, createdAt: row.created_at } });
+});
+
+// ---------- counteroffers ----------
+
+app.post("/api/conversations/:id/offers", requireAuth, (req, res) => {
+  const conversation = conversationForParticipant(req.params.id, req.user.id);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+
+  const { offerItemId, cashAmount, note } = req.body || {};
+
+  let offerItem = null;
+  if (offerItemId !== undefined && offerItemId !== null) {
+    offerItem = db.prepare("SELECT * FROM items WHERE id = ?").get(offerItemId);
+    if (!offerItem || offerItem.user_id !== req.user.id || !offerItem.available) {
+      return res.status(400).json({ error: "offerItemId must be an available item you own" });
+    }
+  }
+
+  const cash = cashAmount === undefined || cashAmount === null ? 0 : Number(cashAmount);
+  if (typeof cash !== "number" || Number.isNaN(cash) || cash < 0 || cash > 1000000) {
+    return res.status(400).json({ error: "cashAmount must be a number between 0 and 1000000" });
+  }
+
+  // only one live offer per side: auto-decline any other still-pending offer from this sender
+  db.prepare(
+    "UPDATE offers SET status = 'declined' WHERE conversation_id = ? AND from_user_id = ? AND status = 'pending'"
+  ).run(conversation.id, req.user.id);
+
+  const info = db
+    .prepare(
+      `INSERT INTO offers (conversation_id, from_user_id, offer_item_id, cash_amount, note)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(conversation.id, req.user.id, offerItem ? offerItem.id : null, cash, note || "");
+
+  const row = db.prepare("SELECT * FROM offers WHERE id = ?").get(info.lastInsertRowid);
+  res.status(201).json({ offer: publicOffer(row) });
+});
+
+app.get("/api/conversations/:id/offers", requireAuth, (req, res) => {
+  const conversation = conversationForParticipant(req.params.id, req.user.id);
+  if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+  const rows = db.prepare("SELECT * FROM offers WHERE conversation_id = ? ORDER BY id DESC").all(conversation.id);
+  res.json({ offers: rows.map(publicOffer) });
+});
+
+app.post("/api/offers/:id/accept", requireAuth, (req, res) => {
+  const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(req.params.id);
+  if (!offer) return res.status(404).json({ error: "Offer not found" });
+  const conversation = conversationForParticipant(offer.conversation_id, req.user.id);
+  if (!conversation) return res.status(404).json({ error: "Offer not found" });
+  if (offer.from_user_id === req.user.id) {
+    return res.status(403).json({ error: "Only the recipient can accept an offer" });
+  }
+
+  const trade = db.prepare("SELECT * FROM trades WHERE id = ?").get(conversation.trade_id);
+
+  if (offer.status !== "accepted") {
+    db.prepare("UPDATE offers SET status = 'accepted' WHERE id = ?").run(offer.id);
+    db.prepare(
+      "UPDATE offers SET status = 'declined' WHERE conversation_id = ? AND id != ? AND status = 'pending'"
+    ).run(conversation.id, offer.id);
+
+    if (offer.offer_item_id) {
+      if (trade.user1_id === offer.from_user_id) {
+        db.prepare("UPDATE trades SET item1_id = ? WHERE id = ?").run(offer.offer_item_id, trade.id);
+      } else {
+        db.prepare("UPDATE trades SET item2_id = ? WHERE id = ?").run(offer.offer_item_id, trade.id);
+      }
+    }
+    db.prepare("UPDATE trades SET status = 'confirmed' WHERE id = ?").run(trade.id);
+  }
+
+  const freshOffer = db.prepare("SELECT * FROM offers WHERE id = ?").get(offer.id);
+  const freshTrade = db.prepare("SELECT * FROM trades WHERE id = ?").get(trade.id);
+  res.json({
+    offer: publicOffer(freshOffer),
+    trade: { id: freshTrade.id, status: freshTrade.status, createdAt: freshTrade.created_at },
+  });
+});
+
+app.post("/api/offers/:id/decline", requireAuth, (req, res) => {
+  const offer = db.prepare("SELECT * FROM offers WHERE id = ?").get(req.params.id);
+  if (!offer) return res.status(404).json({ error: "Offer not found" });
+  const conversation = conversationForParticipant(offer.conversation_id, req.user.id);
+  if (!conversation) return res.status(404).json({ error: "Offer not found" });
+  if (offer.from_user_id === req.user.id) {
+    return res.status(403).json({ error: "Only the recipient can decline an offer" });
+  }
+
+  if (offer.status === "pending") {
+    db.prepare("UPDATE offers SET status = 'declined' WHERE id = ?").run(offer.id);
+  }
+  const fresh = db.prepare("SELECT * FROM offers WHERE id = ?").get(offer.id);
+  res.json({ offer: publicOffer(fresh) });
 });
 
 // ---------- reports & blocks (trust & safety) ----------
@@ -627,6 +872,87 @@ app.post("/api/trades/:id/complete", requireAuth, (req, res) => {
   });
 });
 
+// ---------- ratings ----------
+
+app.post("/api/trades/:id/rate", requireAuth, (req, res) => {
+  const trade = db.prepare("SELECT * FROM trades WHERE id = ?").get(req.params.id);
+  if (!trade || (trade.user1_id !== req.user.id && trade.user2_id !== req.user.id)) {
+    return res.status(404).json({ error: "Trade not found" });
+  }
+  if (trade.status !== "completed") {
+    return res.status(400).json({ error: "You can only rate a completed trade" });
+  }
+
+  const { stars, comment } = req.body || {};
+  const starsNum = Number(stars);
+  if (!Number.isInteger(starsNum) || starsNum < 1 || starsNum > 5) {
+    return res.status(400).json({ error: "stars must be an integer from 1 to 5" });
+  }
+
+  const existing = db.prepare("SELECT id FROM ratings WHERE trade_id = ? AND rater_id = ?").get(trade.id, req.user.id);
+  if (existing) return res.status(409).json({ error: "You already rated this trade" });
+
+  const rateeId = trade.user1_id === req.user.id ? trade.user2_id : trade.user1_id;
+  const info = db
+    .prepare("INSERT INTO ratings (trade_id, rater_id, ratee_id, stars, comment) VALUES (?, ?, ?, ?, ?)")
+    .run(trade.id, req.user.id, rateeId, starsNum, comment || "");
+  const row = db.prepare("SELECT * FROM ratings WHERE id = ?").get(info.lastInsertRowid);
+  res.status(201).json({
+    rating: {
+      id: row.id,
+      tradeId: row.trade_id,
+      raterId: row.rater_id,
+      rateeId: row.ratee_id,
+      stars: row.stars,
+      comment: row.comment,
+      createdAt: row.created_at,
+    },
+  });
+});
+
+app.get("/api/users/:id/ratings", requireAuth, (req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT r.*, u.name AS rater_name, u.avatar_url AS rater_avatar
+       FROM ratings r JOIN users u ON u.id = r.rater_id
+       WHERE r.ratee_id = ? ORDER BY r.id DESC`
+    )
+    .all(req.params.id);
+  const ratings = rows.map((r) => ({
+    id: r.id,
+    stars: r.stars,
+    comment: r.comment || "",
+    createdAt: r.created_at,
+    rater: { id: r.rater_id, name: r.rater_name, avatarUrl: absUrl(r.rater_avatar || "") },
+  }));
+  const agg = userRating(Number(req.params.id));
+  res.json({ ratings, average: agg.average, count: agg.count });
+});
+
+// ---------- web push ----------
+
+app.get("/api/push/key", (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post("/api/push/subscribe", requireAuth, (req, res) => {
+  const { endpoint, keys } = req.body || {};
+  if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+    return res.status(400).json({ error: "endpoint and keys.p256dh/auth are required" });
+  }
+  db.prepare(
+    `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth) VALUES (?, ?, ?, ?)
+     ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth`
+  ).run(req.user.id, endpoint, keys.p256dh, keys.auth);
+  res.json({ ok: true });
+});
+
+app.post("/api/push/unsubscribe", requireAuth, (req, res) => {
+  const { endpoint } = req.body || {};
+  db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint || "");
+  res.json({ ok: true });
+});
+
 // ---------- production static hosting ----------
 
 if (process.env.NODE_ENV === "production") {
@@ -643,6 +969,8 @@ app.use((err, req, res, next) => {
 const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
   app.listen(PORT, () => console.log(`[PeekPick] server listening on http://localhost:${PORT}`));
+  maybeBackup();
+  setInterval(maybeBackup, 6 * 60 * 60 * 1000).unref(); // re-checks staleness; backs up ~daily
 }
 
 export default app;

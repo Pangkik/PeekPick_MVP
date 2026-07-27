@@ -1,3 +1,8 @@
+export interface RatingSummary {
+  average: number;
+  count: number;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -6,6 +11,7 @@ export interface User {
   location?: string;
   avatarUrl?: string;
   verified: boolean;
+  rating: RatingSummary;
 }
 
 export interface Preferences {
@@ -27,6 +33,7 @@ export interface MeResponse {
   user: User;
   preferences: Preferences | null;
   passport: Passport;
+  swipesRemaining: number;
 }
 
 export interface ItemOwner {
@@ -34,6 +41,7 @@ export interface ItemOwner {
   name: string;
   avatarUrl?: string;
   location?: string;
+  rating?: RatingSummary;
 }
 
 export interface Item {
@@ -68,6 +76,12 @@ export interface LastMessage {
   createdAt: string;
 }
 
+export interface Rating {
+  stars: number;
+  comment?: string;
+  createdAt: string;
+}
+
 export interface Match {
   trade: Trade;
   myItem: Item;
@@ -75,12 +89,24 @@ export interface Match {
   otherUser: MatchOtherUser;
   conversationId: string;
   lastMessage: LastMessage | null;
+  myRating: Rating | null;
 }
 
 export interface Message {
   id: string;
   senderId: string;
   content: string;
+  createdAt: string;
+}
+
+export interface Offer {
+  id: string;
+  conversationId: string;
+  fromUserId: string;
+  offerItem: Item | null;
+  cashAmount: number;
+  note: string;
+  status: "pending" | "accepted" | "declined";
   createdAt: string;
 }
 
@@ -91,4 +117,6 @@ export interface SwipeResult {
   myItem?: Item;
   theirItem?: Item;
   otherUser?: MatchOtherUser;
+  swipesRemaining?: number;
+  limitReached?: boolean;
 }
