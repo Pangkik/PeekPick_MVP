@@ -29,9 +29,10 @@ export default function MatchScreen({ myItem, theirItem, onContinue, onMessage }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-primary/5" />
-      
+      {/* Animated background — leans on the brand-to-accent match gradient, kept
+          faint so it reads as a celebratory wash rather than a solid card. */}
+      <div className="absolute inset-0 bg-gradient-match opacity-[0.12] pointer-events-none" />
+
       {/* Confetti particles */}
       {Array.from({ length: 20 }).map((_, i) => (
         <div
@@ -51,43 +52,45 @@ export default function MatchScreen({ myItem, theirItem, onContinue, onMessage }
       {/* Close button */}
       <button
         onClick={onContinue}
-        className="absolute top-6 right-6 w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+        aria-label="Close match celebration"
+        className="absolute top-6 right-6 w-11 h-11 rounded-full bg-surface-elevated shadow-float flex items-center justify-center text-muted-foreground hover:text-foreground hover:-translate-y-0.5 active:scale-95 motion-reduce:transform-none transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
         <X className="w-5 h-5" />
       </button>
 
       <div className="relative z-10 flex flex-col items-center text-center px-8 max-w-sm mx-auto">
-        {/* Match badge */}
-        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center mb-6 shadow-green animate-bounce-in">
+        {/* Match badge — the celebration's focal point, carries the match gradient */}
+        <div className="w-20 h-20 rounded-full bg-gradient-match flex items-center justify-center mb-6 shadow-green animate-bounce-in">
           <ArrowLeftRight className="w-9 h-9 text-primary-foreground" />
         </div>
 
-        <h1 className="text-5xl font-black mb-2 gradient-text animate-match-pop">
+        <h1 className="text-5xl font-black mb-2 text-display gradient-text animate-match-pop">
           It's a Trade!
         </h1>
         <p className="text-muted-foreground mb-10 text-lg">
           You and <span className="text-foreground font-bold">{theirItem.owner}</span> both want to swap!
         </p>
 
-        {/* Items side by side */}
+        {/* Items side by side — raised white cards, the pattern used everywhere
+            else in the app to lift one important detail off a busy surface. */}
         <div className="flex items-center gap-4 mb-10 w-full">
           {/* My item */}
-          <div className="flex-1 bg-surface-elevated border-2 border-primary/40 rounded-2xl p-5 flex flex-col items-center gap-3 animate-bounce-in shadow-green">
+          <div className="flex-1 bg-surface-elevated border-2 border-primary/40 rounded-[14px] p-5 flex flex-col items-center gap-3 animate-bounce-in shadow-elevated">
             <ItemVisual photoUrl={myItem.photoUrl} title={myItem.title} />
             <div className="text-sm font-bold text-center leading-tight">{myItem.title}</div>
-            <div className="text-xs text-muted-foreground">Your item</div>
+            <p className="text-eyebrow">Your item</p>
           </div>
 
           {/* Exchange icon */}
-          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0 shadow-green animate-pulse">
+          <div className="w-11 h-11 rounded-full bg-gradient-match flex items-center justify-center flex-shrink-0 shadow-green animate-pulse">
             <ArrowLeftRight className="w-5 h-5 text-primary-foreground" />
           </div>
 
           {/* Their item */}
-          <div className="flex-1 bg-surface-elevated border-2 border-primary/40 rounded-2xl p-5 flex flex-col items-center gap-3 animate-bounce-in shadow-green" style={{ animationDelay: "0.1s" }}>
+          <div className="flex-1 bg-surface-elevated border-2 border-primary/40 rounded-[14px] p-5 flex flex-col items-center gap-3 animate-bounce-in shadow-elevated" style={{ animationDelay: "0.1s" }}>
             <ItemVisual photoUrl={theirItem.photoUrl} title={theirItem.title} />
             <div className="text-sm font-bold text-center leading-tight">{theirItem.title}</div>
-            <div className="text-xs text-muted-foreground">Their item</div>
+            <p className="text-eyebrow">Their item</p>
           </div>
         </div>
 
@@ -101,21 +104,21 @@ export default function MatchScreen({ myItem, theirItem, onContinue, onMessage }
         <div className="flex flex-col gap-3 w-full">
           <button
             onClick={onMessage}
-            className="flex items-center justify-center gap-3 bg-primary text-primary-foreground font-bold py-4 rounded-full shadow-green hover:bg-primary-glow hover:scale-[1.02] transition-all duration-200"
+            className="flex items-center justify-center gap-3 bg-primary text-primary-foreground font-bold py-4 rounded-full shadow-green hover:bg-primary-glow hover:scale-[1.02] transition-all duration-200 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <MessageCircle className="w-5 h-5" />
             Message {theirItem.owner}
           </button>
           <button
             onClick={onContinue}
-            className="flex items-center justify-center gap-3 bg-surface-elevated border border-border text-foreground font-bold py-4 rounded-full hover:border-primary/40 transition-all duration-200"
+            className="flex items-center justify-center gap-3 bg-surface-elevated border border-border text-foreground font-bold py-4 rounded-full hover:border-primary/40 transition-all duration-200 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Keep Swiping
           </button>
         </div>
 
         {/* Share */}
-        <button className="mt-4 flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors">
+        <button className="mt-4 flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors min-h-11 px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded">
           <Share2 className="w-4 h-4" />
           Share this trade
         </button>

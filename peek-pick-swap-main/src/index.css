@@ -5,31 +5,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PeekPick Design System — Vibrant & Playful (emerald / amber / blue) */
-/* Green is the brand truth: PeekPick is a sustainability / circular-economy */
-/* app. All colors MUST be HSL. Light mode is the default theme; .dark is a */
-/* desaturated tonal variant for users who prefer dark mode. */
+/* PeekPick Design System — Warm Blush (paper / cocoa ink / emerald) */
+/* Visual direction adapted from an editorial "dating app" reference: a warm */
+/* blush paper canvas, deep cocoa ink, full-bleed gradient cards with a bottom */
+/* scrim, glass pills, and floating white circular actions. Green stays the */
+/* brand truth (circular economy) and owns the primary "want to trade" action. */
+/* All colors MUST be HSL. Light is default; .dark is a warm cocoa variant. */
+/* Contrast was measured, not guessed: the reference's muted tone (#A07570) */
+/* lands at 3.43:1 on blush and fails AA for body text, so it is darkened here */
+/* and kept only as a decorative tint. */
 
 @layer base {
   :root {
-    /* Core backgrounds — soft warm-green wash */
-    --background: 138 77% 97%;        /* #F0FDF4 */
-    --surface: 145 40% 94%;           /* alternating section band */
-    --surface-elevated: 0 0% 100%;    /* #FFFFFF — cards, buttons, the swipe deck */
-    --surface-hover: 148 55% 91%;     /* pressed/hover tint */
+    /* Core backgrounds — warm blush paper */
+    --background: 19 100% 94%;        /* #FFEAE0 — blush canvas */
+    --surface: 21 100% 97%;           /* #FFF4EE — lifted band */
+    --surface-elevated: 0 0% 100%;    /* #FFFFFF — cards, sheets, action buttons */
+    --surface-hover: 18 78% 91%;      /* pressed/hover tint */
 
-    --foreground: 155 40% 14%;        /* deep green-charcoal, ~13:1 on background */
-    --foreground-muted: 155 20% 35%;  /* muted body copy, ~6:1 on white */
-    --foreground-subtle: 150 12% 55%;
+    --foreground: 0 38% 16%;          /* #3A1A1A cocoa ink — 13.5:1 on blush */
+    --foreground-muted: 7 26% 38%;    /* #7A4E48 — 6.0:1 on blush, AA body copy */
+    --foreground-subtle: 7 24% 44%;   /* #8A5A54 — 4.9:1, smallest passing tint */
 
-    /* Brand — Emerald (primary action / "want" heart). Mid greens like */
-    /* #10B981 fail 4.5:1 with white text, so the interactive default sits */
-    /* in the emerald-700 range (#047857, ~5.5:1); glow/hover stays just */
-    /* inside AA (~4.9:1) rather than jumping to a brighter, failing green. */
+    /* Brand — Emerald (primary action / "want to trade"). Mid greens fail */
+    /* 4.5:1 with white text, so filled buttons sit at emerald-700 (#047857, */
+    /* 5.5:1 on white). The brighter #22A06B is graphics-only (3.3:1). */
     --primary: 163 94% 24%;           /* #047857 */
     --primary-foreground: 0 0% 100%;
     --primary-glow: 161 90% 27%;      /* hover/glow, still ≥4.5:1 with white text */
-    --primary-dim: 152 76% 92%;       /* tinted mint background */
+    --primary-dim: 152 60% 94%;       /* tinted mint background */
 
     /* Cards & UI */
     --card: 0 0% 100%;
@@ -38,34 +42,36 @@
     --popover: 0 0% 100%;
     --popover-foreground: 155 40% 14%;
 
-    /* Secondary — warm amber pop. Decorative only: a mid amber fails AA */
-    /* contrast for text at any weight we tested. Use for gradients, icon */
-    /* fills, illustrative backgrounds — never body text. */
-    --secondary: 27 96% 61%;          /* #FB923C */
-    --secondary-foreground: 155 40% 14%;
+    /* Secondary — dusty rose from the reference's card ramp. Decorative only: */
+    /* fails AA for text at any weight. Gradients, icon fills, illustration. */
+    --secondary: 12 53% 65%;          /* #D68A78 */
+    --secondary-foreground: 0 38% 16%;
 
-    --muted: 150 35% 92%;
-    --muted-foreground: 155 20% 35%;
+    --muted: 18 70% 93%;
+    --muted-foreground: 7 26% 38%;
 
-    /* Accent / CTA — Blue, kept as the secondary interactive color so the */
-    /* "super swap" highlight reads distinctly from the green want/primary */
-    /* action and the red pass/destructive action. */
-    --accent: 221 83% 53%;            /* #2563EB */
+    /* Accent / CTA — Violet, the "super swap" highlight. Reads distinctly */
+    /* from the green want action and the coral pass action. Darkened from */
+    /* the reference's #7C5CFF (3.75:1) to #6039E0 (5.7:1 on blush). */
+    --accent: 254 73% 55%;            /* #6039E0 */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;         /* #DC2626 */
+    /* Coral, darkened from the reference's #FF5E72 (2.6:1) to keep 4.5:1 */
+    /* with white text and 3:1 as an icon glyph on a white button. */
+    --destructive: 352 67% 54%;       /* #D8394F */
     --destructive-foreground: 0 0% 100%;
 
     /* Swipe semantics */
-    --swipe-like: 163 94% 24%;        /* Emerald — swipe right / want */
-    --swipe-pass: 0 72% 51%;          /* Red — swipe left / pass */
-    --swipe-super: 221 83% 53%;       /* Blue — super swap */
+    --swipe-like: 163 94% 24%;        /* Emerald — swipe right / want to trade */
+    --swipe-pass: 352 67% 54%;        /* Coral — swipe left / pass */
+    --swipe-super: 254 73% 55%;       /* Violet — super swap */
 
-    --border: 149 80% 90%;            /* soft mint hairline */
-    --input: 149 65% 87%;
+    --border: 18 67% 85%;             /* #F2CEBE — warm hairline */
+    --input: 18 60% 82%;
     --ring: 163 94% 24%;
 
-    --radius: 0.75rem;
+    /* Reference uses 20px on the full-bleed card and 14px on inner cards. */
+    --radius: 0.875rem;               /* 14px */
 
     --sidebar-background: 145 40% 94%;
     --sidebar-foreground: 155 40% 14%;
@@ -76,59 +82,75 @@
     --sidebar-border: 149 80% 90%;
     --sidebar-ring: 163 94% 24%;
 
-    /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(138 77% 97%) 0%, hsl(150 60% 92%) 50%, hsl(138 77% 97%) 100%);
-    --gradient-card: linear-gradient(180deg, transparent 0%, hsl(155 45% 6% / 0.88) 100%);
+    /* Gradients. The item card mirrors the reference's 135° three-stop ramp
+       (blush → dusty rose → wine) with a bottom scrim so white type clears AA
+       over the busiest part of the image. */
+    --gradient-hero: linear-gradient(135deg, hsl(19 100% 94%) 0%, hsl(18 78% 91%) 50%, hsl(19 100% 94%) 100%);
+    --gradient-item: linear-gradient(135deg, hsl(11 100% 83%) 0%, hsl(12 53% 65%) 50%, hsl(348 41% 38%) 100%);
+    /* Scrim is deliberately stronger than the reference's. The reference sits
+       over art-directed gradients; this sits over whatever photo a user
+       uploads. Worst case (a pure-white photo) still leaves white overlay
+       type at ~6:1 where the owner line renders. */
+    --gradient-card: linear-gradient(180deg, transparent 20%, hsl(0 38% 16% / 0.65) 50%, hsl(0 38% 16% / 0.95) 100%);
     --gradient-green: linear-gradient(135deg, hsl(163 94% 24%), hsl(163 90% 19%));
-    --gradient-match: linear-gradient(135deg, hsl(163 94% 24%) 0%, hsl(221 83% 53%) 100%);
+    --gradient-match: linear-gradient(135deg, hsl(163 94% 24%) 0%, hsl(254 73% 55%) 100%);
 
-    /* Shadows — warm, tinted (never pure black) */
-    --shadow-card: 0 8px 32px hsl(155 45% 15% / 0.16);
-    --shadow-green: 0 0 20px hsl(163 94% 24% / 0.35);
-    --shadow-elevated: 0 4px 16px hsl(155 40% 15% / 0.14);
+    /* Shadow ramp lifted from the reference: a deep soft drop on the hero
+       card, a mid one on raised inner cards, a tight one on floating pills
+       and circular actions. Always cocoa-tinted, never pure black. */
+    --shadow-card: 0 20px 40px hsl(0 38% 16% / 0.20);
+    --shadow-elevated: 0 8px 24px hsl(0 38% 16% / 0.20);
+    --shadow-float: 0 6px 18px hsl(0 38% 16% / 0.12);
+    --shadow-green: 0 6px 18px hsl(163 94% 24% / 0.28);
+
+    /* Glass pill (over imagery) — reference: 25% white + 10px blur */
+    --glass-bg: 0 0% 100% / 0.25;
+    --glass-blur: 10px;
   }
 
-  /* Dark mode — desaturated tonal variant, contrast checked independently */
+  /* Dark mode — warm cocoa, not a desaturated green. Tonal variants of the
+     light hues rather than inversions, and re-checked for contrast on their
+     own backgrounds (mid greens/corals that pass on blush do not pass here). */
   .dark {
-    --background: 155 35% 8%;
-    --surface: 155 28% 12%;
-    --surface-elevated: 155 24% 16%;
-    --surface-hover: 155 22% 21%;
+    --background: 0 20% 8%;           /* deep cocoa */
+    --surface: 0 16% 12%;
+    --surface-elevated: 0 14% 16%;
+    --surface-hover: 0 13% 21%;
 
-    --foreground: 138 35% 93%;
-    --foreground-muted: 140 18% 70%;
-    --foreground-subtle: 140 12% 48%;
+    --foreground: 20 40% 94%;         /* warm paper white */
+    --foreground-muted: 18 20% 74%;
+    --foreground-subtle: 15 14% 56%;
 
-    --primary: 158 75% 45%;
-    --primary-foreground: 155 60% 10%;
-    --primary-glow: 156 80% 52%;
-    --primary-dim: 158 40% 22%;
+    --primary: 158 62% 52%;           /* lifted so it reads on cocoa */
+    --primary-foreground: 0 30% 9%;
+    --primary-glow: 156 68% 58%;
+    --primary-dim: 160 30% 20%;
 
-    --card: 155 24% 16%;
-    --card-foreground: 138 35% 93%;
+    --card: 0 14% 16%;
+    --card-foreground: 20 40% 94%;
 
-    --popover: 155 24% 16%;
-    --popover-foreground: 138 35% 93%;
+    --popover: 0 14% 16%;
+    --popover-foreground: 20 40% 94%;
 
-    --secondary: 27 85% 55%;
-    --secondary-foreground: 155 60% 10%;
+    --secondary: 12 48% 62%;
+    --secondary-foreground: 0 30% 9%;
 
-    --muted: 155 20% 18%;
-    --muted-foreground: 140 18% 70%;
+    --muted: 0 12% 19%;
+    --muted-foreground: 18 20% 74%;
 
-    --accent: 221 85% 68%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 254 82% 74%;
+    --accent-foreground: 0 30% 9%;
 
-    --destructive: 0 70% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 352 76% 66%;
+    --destructive-foreground: 0 30% 9%;
 
-    --swipe-like: 158 75% 45%;
-    --swipe-pass: 0 70% 60%;
-    --swipe-super: 221 85% 68%;
+    --swipe-like: 158 62% 52%;
+    --swipe-pass: 352 76% 66%;
+    --swipe-super: 254 82% 74%;
 
-    --border: 155 22% 24%;
-    --input: 155 22% 24%;
-    --ring: 158 75% 45%;
+    --border: 0 12% 25%;
+    --input: 0 12% 25%;
+    --ring: 158 62% 52%;
 
     --sidebar-background: 155 28% 12%;
     --sidebar-foreground: 138 35% 93%;
@@ -139,14 +161,19 @@
     --sidebar-border: 155 22% 24%;
     --sidebar-ring: 158 75% 45%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(155 35% 8%) 0%, hsl(158 30% 13%) 50%, hsl(155 35% 8%) 100%);
-    --gradient-card: linear-gradient(180deg, transparent 0%, hsl(155 45% 4% / 0.9) 100%);
-    --gradient-green: linear-gradient(135deg, hsl(158 75% 45%), hsl(158 75% 36%));
-    --gradient-match: linear-gradient(135deg, hsl(158 75% 45%) 0%, hsl(221 85% 68%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 20% 8%) 0%, hsl(0 16% 13%) 50%, hsl(0 20% 8%) 100%);
+    --gradient-item: linear-gradient(135deg, hsl(11 60% 58%) 0%, hsl(12 45% 44%) 50%, hsl(348 40% 26%) 100%);
+    --gradient-card: linear-gradient(180deg, transparent 20%, hsl(0 30% 5% / 0.7) 50%, hsl(0 30% 5% / 0.96) 100%);
+    --gradient-green: linear-gradient(135deg, hsl(158 62% 52%), hsl(158 62% 40%));
+    --gradient-match: linear-gradient(135deg, hsl(158 62% 52%) 0%, hsl(254 82% 74%) 100%);
 
-    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.5);
-    --shadow-green: 0 0 20px hsl(158 75% 45% / 0.35);
-    --shadow-elevated: 0 4px 16px hsl(0 0% 0% / 0.55);
+    --shadow-card: 0 20px 40px hsl(0 0% 0% / 0.55);
+    --shadow-elevated: 0 8px 24px hsl(0 0% 0% / 0.5);
+    --shadow-float: 0 6px 18px hsl(0 0% 0% / 0.45);
+    --shadow-green: 0 6px 18px hsl(158 62% 52% / 0.3);
+
+    --glass-bg: 0 0% 100% / 0.14;
+    --glass-blur: 10px;
   }
 }
 
@@ -189,6 +216,38 @@
 }
 
 @layer utilities {
+  /* Frosted pill sitting over imagery. The reference tints with 25% WHITE,
+     which only works because its pills always sit over a dark scrim. This one
+     has to survive any user-uploaded photo, including a white one, so it tints
+     with cocoa instead: 0.7 over pure white still leaves white label text at
+     ~6.3:1. The blur is the decorative part; the tint does the a11y work. */
+  .glass-pill {
+    background: hsl(0 38% 16% / 0.7);
+    border-radius: 999px;
+    padding: 0.375rem 0.75rem;
+    color: #fff;
+  }
+  @supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+    .glass-pill {
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      backdrop-filter: blur(var(--glass-blur));
+    }
+  }
+
+  /* Display type — reference pairs 30px/700 with -0.6px tracking (-0.02em). */
+  .text-display {
+    letter-spacing: -0.02em;
+  }
+
+  /* Small uppercase eyebrow above a card's content. */
+  .text-eyebrow {
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: hsl(var(--foreground-subtle));
+  }
+
   /* Swipe card transforms */
   .swipe-card-like {
     transform: rotate(8deg) translateX(80px);

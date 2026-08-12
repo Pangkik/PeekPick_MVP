@@ -121,7 +121,7 @@ export default function Homepage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] tracking-tight mb-6 animate-fade-slide-up" style={{ animationDelay: "0.1s" }}>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black leading-[0.95] text-display mb-6 animate-fade-slide-up" style={{ animationDelay: "0.1s" }}>
             Turn what you{" "}
             <span className="gradient-text">don't need</span>
             <br />
@@ -179,7 +179,7 @@ export default function Homepage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-primary text-sm font-bold uppercase tracking-widest mb-3">Simple Process</p>
-            <h2 className="text-4xl md:text-5xl font-black">How PeekPick Works</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-display">How PeekPick Works</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -226,7 +226,7 @@ export default function Homepage() {
           <div className="flex items-end justify-between mb-12">
             <div>
               <p className="text-primary text-sm font-bold uppercase tracking-widest mb-3">Browse by Category</p>
-              <h2 className="text-4xl md:text-5xl font-black">What's Being Traded</h2>
+              <h2 className="text-4xl md:text-5xl font-black text-display">What's Being Traded</h2>
             </div>
             <button
               onClick={() => navigate("/swipe")}
@@ -283,7 +283,7 @@ export default function Homepage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <p className="text-primary text-sm font-bold uppercase tracking-widest mb-3">Real Stories</p>
-            <h2 className="text-4xl md:text-5xl font-black">Traders e PeekPick</h2>
+            <h2 className="text-4xl md:text-5xl font-black text-display">Traders e PeekPick</h2>
           </div>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -322,7 +322,7 @@ export default function Homepage() {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
             <div className="relative z-10">
               <div className="text-5xl mb-6">🔄</div>
-              <h2 className="text-4xl md:text-5xl font-black mb-4">Ready to Trade?</h2>
+              <h2 className="text-4xl md:text-5xl font-black text-display mb-4">Ready to Trade?</h2>
               <p className="text-muted-foreground text-lg mb-8">
                 Join thousands of traders across Southeast Asia exchanging goods, reducing waste, and building community.
               </p>

@@ -39,7 +39,7 @@ export default function BottomNav() {
   return (
     <nav
       aria-label="Primary"
-      className="border-t border-border bg-surface-elevated pb-safe"
+      className="border-t border-border bg-background/90 backdrop-blur-md pb-safe"
     >
       <div className="flex items-center justify-around px-4 py-2">
         {NAV_ITEMS.map((item) => {
@@ -53,7 +53,7 @@ export default function BottomNav() {
                 key={to}
                 onClick={() => goTo(item)}
                 aria-label={label}
-                className="w-12 h-12 -mt-1 rounded-full bg-primary flex items-center justify-center shadow-green hover:bg-primary-glow active:scale-95 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated"
+                className="w-12 h-12 -mt-1 rounded-full bg-primary flex items-center justify-center shadow-green hover:bg-primary-glow hover:-translate-y-0.5 active:scale-95 motion-reduce:transform-none transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Icon className="w-6 h-6 text-primary-foreground" strokeWidth={2.25} />
               </button>
@@ -67,7 +67,7 @@ export default function BottomNav() {
               aria-label={label}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-11 min-h-11 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface-elevated",
+                "flex flex-col items-center gap-0.5 py-1.5 px-3 min-w-11 min-h-11 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 active ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >

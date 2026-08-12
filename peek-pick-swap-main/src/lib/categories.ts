@@ -50,5 +50,11 @@ export const CONDITIONS = [
 ];
 
 export function labelFor(list: { id: string; label: string }[], id: string) {
-  return list.find((entry) => entry.id === id)?.label ?? id;
+  const known = list.find((entry) => entry.id === id)?.label;
+  if (known) return known;
+  // Legacy/seed rows can carry ids that predate the current list ("new",
+  // "good"). Humanise rather than leaking a raw slug into the UI.
+  return id
+    ? id.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+    : id;
 }

@@ -107,11 +107,13 @@ export default function Search() {
                 key={item.id}
                 className="rounded-2xl border border-border bg-surface-elevated overflow-hidden"
               >
-                <div className="aspect-square">
+                <div className="aspect-square relative">
                   <ItemVisual category={item.category} index={i} photoUrl={item.photoUrls[0]} alt={item.title} />
+                  <span className="glass-pill absolute top-2 left-2 text-[11px] font-bold leading-none">
+                    {labelFor(CONDITIONS, item.condition)}
+                  </span>
                 </div>
                 <div className="p-3">
-                  <p className="text-xs font-semibold text-primary mb-0.5">{labelFor(CONDITIONS, item.condition)}</p>
                   <p className="font-bold text-sm leading-snug line-clamp-2">{item.title}</p>
                 </div>
               </div>

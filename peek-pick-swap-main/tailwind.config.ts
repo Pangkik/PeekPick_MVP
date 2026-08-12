@@ -97,6 +97,7 @@ export default {
       backgroundImage: {
         "gradient-hero": "var(--gradient-hero)",
         "gradient-card": "var(--gradient-card)",
+        "gradient-item": "var(--gradient-item)",
         "gradient-green": "var(--gradient-green)",
         "gradient-match": "var(--gradient-match)",
       },
@@ -104,6 +105,7 @@ export default {
         card: "var(--shadow-card)",
         green: "var(--shadow-green)",
         elevated: "var(--shadow-elevated)",
+        float: "var(--shadow-float)",
       },
     },
   },

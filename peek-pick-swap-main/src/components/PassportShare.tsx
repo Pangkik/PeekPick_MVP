@@ -155,13 +155,13 @@ export default function PassportShare({ passport, name }: { passport: Passport; 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          className="w-full mt-5 flex items-center justify-center gap-2 min-h-[44px] rounded-full border border-primary/40 text-primary font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-colors"
+          className="w-full mt-5 flex items-center justify-center gap-2 min-h-[44px] rounded-full border border-primary/40 text-primary font-bold text-sm hover:bg-primary hover:text-primary-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <Share2 className="w-4 h-4" /> Share my Passport
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm rounded-3xl">
         <DialogHeader>
           <DialogTitle>Share your Passport</DialogTitle>
           <DialogDescription>
@@ -173,11 +173,11 @@ export default function PassportShare({ passport, name }: { passport: Passport; 
           ref={attachCanvas}
           width={W}
           height={H}
-          className="w-full rounded-2xl border border-border"
+          className="w-full rounded-[14px] border border-border"
           aria-label={`Circular Passport card: ${passport.itemsReused} items reused, ${passport.co2SavedKg} kilograms of CO2 saved, ${passport.wasteDivertedKg} kilograms of waste diverted`}
         />
 
-        <div className="rounded-xl bg-surface-elevated border border-border p-3">
+        <div className="rounded-[14px] bg-surface border border-border p-3">
           <p className="text-sm text-foreground">{caption}</p>
         </div>
 
@@ -185,7 +185,7 @@ export default function PassportShare({ passport, name }: { passport: Passport; 
           <button
             onClick={handleShare}
             disabled={busy}
-            className="flex-1 flex items-center justify-center gap-2 min-h-[44px] rounded-full bg-primary text-primary-foreground font-bold text-sm disabled:opacity-60"
+            className="flex-1 flex items-center justify-center gap-2 min-h-[44px] rounded-full bg-primary text-primary-foreground font-bold text-sm disabled:opacity-60 hover:bg-primary-glow transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
             Share
@@ -193,14 +193,14 @@ export default function PassportShare({ passport, name }: { passport: Passport; 
           <button
             onClick={() => handleDownload()}
             aria-label="Download image"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-border hover:bg-surface-elevated transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-border hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             <Download className="w-4 h-4" />
           </button>
           <button
             onClick={handleCopy}
             aria-label="Copy caption"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-border hover:bg-surface-elevated transition-colors"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full border border-border hover:bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
           </button>

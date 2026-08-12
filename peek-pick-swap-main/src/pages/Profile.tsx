@@ -215,32 +215,33 @@ export default function Profile() {
               )}
             </div>
 
-            {/* Passport hero card */}
-            <div className="relative overflow-hidden bg-surface-elevated border border-primary/30 rounded-3xl p-6 shadow-green">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+            {/* Passport hero card — full-bleed warm gradient, the emotional
+                centre of the profile. Stat tiles are raised white cards lifted
+                off the gradient, per the app's "important detail" pattern. */}
+            <div className="relative overflow-hidden bg-gradient-hero border border-primary/20 rounded-[20px] p-6 shadow-card">
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-5">
                   <div className="w-10 h-10 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center">
                     <Recycle className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h2 className="font-black text-lg leading-none">PeekPick Passport</h2>
+                    <h2 className="font-black text-lg leading-none text-display">PeekPick Passport</h2>
                     <p className="text-xs text-muted-foreground mt-1">Your circular impact</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 mb-5">
-                  <div className="text-center bg-surface/60 rounded-2xl p-3">
+                  <div className="text-center bg-surface-elevated rounded-[14px] p-3 shadow-elevated">
                     <div className="text-2xl font-black gradient-text">{me.passport.itemsReused}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">Items Reused</div>
+                    <p className="text-eyebrow mt-1 leading-tight">Items Reused</p>
                   </div>
-                  <div className="text-center bg-surface/60 rounded-2xl p-3">
+                  <div className="text-center bg-surface-elevated rounded-[14px] p-3 shadow-elevated">
                     <div className="text-2xl font-black gradient-text">{me.passport.co2SavedKg}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">kg CO₂ Saved*</div>
+                    <p className="text-eyebrow mt-1 leading-tight">kg CO₂ Saved*</p>
                   </div>
-                  <div className="text-center bg-surface/60 rounded-2xl p-3">
+                  <div className="text-center bg-surface-elevated rounded-[14px] p-3 shadow-elevated">
                     <div className="text-2xl font-black gradient-text">{me.passport.wasteDivertedKg}</div>
-                    <div className="text-[10px] text-muted-foreground mt-1 font-medium leading-tight">kg Waste Diverted*</div>
+                    <p className="text-eyebrow mt-1 leading-tight">kg Waste Diverted*</p>
                   </div>
                 </div>
 
@@ -297,6 +298,9 @@ export default function Profile() {
                   onCheckedChange={handleTogglePush}
                   disabled={!pushAvailable}
                   aria-label="Toggle push notifications"
+                  /* Switch renders 24px tall; the pseudo-element extends the
+                     tappable area to 44px without changing how it looks. */
+                  className="relative after:absolute after:inset-x-0 after:-inset-y-2.5 after:content-['']"
                 />
               )}
             </div>

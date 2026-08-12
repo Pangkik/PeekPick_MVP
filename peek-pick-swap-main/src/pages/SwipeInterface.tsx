@@ -342,12 +342,12 @@ export default function SwipeInterface() {
               {/* Main swipe card */}
               <div
                 className={cn(
-                  "absolute inset-0 rounded-3xl overflow-hidden border-2 cursor-grab active:cursor-grabbing select-none shadow-card",
+                  "absolute inset-0 rounded-[20px] overflow-hidden border-2 cursor-grab active:cursor-grabbing select-none shadow-card",
                   swipeAnim === "right" ? "animate-swipe-right" : "",
                   swipeAnim === "left" ? "animate-swipe-left" : "",
-                  dragX > swipeLikeThreshold ? "border-swipe-like shadow-green" : "",
+                  dragX > swipeLikeThreshold ? "border-swipe-like" : "",
                   dragX < -swipeLikeThreshold ? "border-swipe-pass" : "",
-                  Math.abs(dragX) <= swipeLikeThreshold ? "border-border" : ""
+                  Math.abs(dragX) <= swipeLikeThreshold ? "border-transparent" : ""
                 )}
                 style={{
                   transform: !swipeAnim ? `rotate(${rotation}deg) translateX(${dragX}px)` : undefined,
@@ -400,72 +400,101 @@ export default function SwipeInterface() {
                   <X className="w-4 h-4" /> PASS
                 </div>
 
+                {/* Scrim spans the whole card so white type clears AA over any
+                    photo, not just over the info block's own height. */}
+                <div className="absolute inset-0 bg-gradient-card pointer-events-none" />
+
+                {/* Glass pills, top corners */}
+                <div className="absolute top-3 left-3 right-16 flex items-start gap-2 pointer-events-none">
+                  <span className="glass-pill text-[11px] font-bold leading-none">
+                    {labelFor(CATEGORIES, currentItem.category)}
+                  </span>
+                  <span className="glass-pill text-[11px] font-semibold leading-none">
+                    {labelFor(CONDITIONS, currentItem.condition)}
+                  </span>
+                </div>
+
                 {/* Item info overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-card p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-white bg-white/15 rounded-full px-3 py-1 border border-white/25">
-                      {labelFor(CATEGORIES, currentItem.category)}
-                    </span>
-                    <span className="text-xs bg-white/10 rounded-full px-3 py-1 text-white/80">
-                      {labelFor(CONDITIONS, currentItem.condition)}
-                    </span>
-                  </div>
+                <div className="absolute bottom-0 left-0 right-0 p-5">
+                  <h2 className="text-[30px] leading-[1.1] font-bold text-white text-display mb-2">
+                    {currentItem.title}
+                  </h2>
 
-                  <h2 className="text-2xl font-black text-white mb-1">{currentItem.title}</h2>
-
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex items-center gap-1.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
+                    <span className="flex items-center gap-1.5 min-w-0">
                       {currentItem.owner.avatarUrl ? (
-                        <img src={currentItem.owner.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover" />
+                        <img src={currentItem.owner.avatarUrl} alt="" className="w-5 h-5 rounded-full object-cover flex-shrink-0" />
                       ) : (
-                        <User className="w-4 h-4 text-white/70" />
+                        <User className="w-4 h-4 text-white/80 flex-shrink-0" aria-hidden="true" />
                       )}
-                      <span className="text-sm font-semibold text-white/90">{currentItem.owner.name}</span>
-                      <RatingStars rating={currentItem.owner.rating} className="text-white/70" />
-                    </div>
+                      <span className="text-sm font-semibold text-white truncate">{currentItem.owner.name}</span>
+                    </span>
+                    <RatingStars rating={currentItem.owner.rating} className="text-white/80" />
                     {currentItem.owner.location && (
-                      <div className="flex items-center gap-1 text-xs text-white/60">
-                        <MapPin className="w-3 h-3" /> {currentItem.owner.location}
-                      </div>
+                      <span className="flex items-center gap-1 text-xs text-white/80 min-w-0">
+                        <MapPin className="w-3 h-3 flex-shrink-0" aria-hidden="true" />
+                        <span className="truncate">{currentItem.owner.location}</span>
+                      </span>
                     )}
                   </div>
 
                   {currentItem.wants.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      <span className="text-xs text-white/50">Wants:</span>
+                    <div className="flex flex-wrap items-center gap-1.5 mb-3">
+                      <span className="text-[11px] uppercase tracking-wider text-white/70 font-semibold">Wants</span>
                       {currentItem.wants.map((w) => (
-                        <span key={w} className="text-xs bg-white/10 rounded-full px-2.5 py-0.5 text-white/80 font-medium">
+                        <span key={w} className="text-[11px] bg-white/20 rounded-full px-2.5 py-1 text-white font-medium leading-none">
                           {labelFor(CATEGORIES, w)}
                         </span>
                       ))}
                     </div>
                   )}
 
-                  {/* Expand info */}
-                  <button
-                    onClick={() => setExpandInfo(!expandInfo)}
-                    className="mt-3 flex items-center gap-1.5 text-xs text-white/60 hover:text-white/90 transition-colors min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 rounded"
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                    {expandInfo ? "Hide details" : "More info"}
-                  </button>
-
-                  {expandInfo && (
-                    <p className="text-sm text-white/70 mt-2 leading-relaxed">{currentItem.description}</p>
+                  {/* Raised white card for the item's own words — the reference
+                      uses this treatment to lift one human detail off the image. */}
+                  {currentItem.description && (
+                    <div className="bg-surface-elevated rounded-[14px] px-4 py-3 shadow-elevated">
+                      <p className="text-eyebrow mb-1">About this item</p>
+                      <p
+                        className={cn(
+                          "text-[13px] leading-[1.45] text-foreground",
+                          !expandInfo && "line-clamp-2"
+                        )}
+                      >
+                        {currentItem.description}
+                      </p>
+                      {currentItem.description.length > 90 && (
+                        <button
+                          onMouseDown={(e) => e.stopPropagation()}
+                          onTouchStart={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpandInfo(!expandInfo);
+                          }}
+                          aria-expanded={expandInfo}
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+                        >
+                          <Info className="w-3 h-3" aria-hidden="true" />
+                          {expandInfo ? "Show less" : "Read more"}
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Action buttons */}
-            <div role="group" aria-label="Swipe actions" className="flex items-center justify-center gap-5 mt-6 w-full">
+            {/* Floating white circular actions — the reference's interaction
+                vocabulary: one surface (white), colour carried by the glyph,
+                size encoding priority (64 primary / 56 accent / 50 utility). */}
+            <div role="group" aria-label="Swipe actions" className="flex items-center justify-center gap-4 mt-6 w-full">
               {/* Pass */}
               <button
                 onClick={() => handleSwipe("left")}
                 aria-label="Pass"
-                className="w-16 h-16 rounded-full bg-surface-elevated border-2 border-swipe-pass/40 flex items-center justify-center hover:bg-swipe-pass/10 hover:border-swipe-pass active:scale-95 transition-all duration-200 shadow-elevated focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="w-16 h-16 rounded-full bg-surface-elevated flex items-center justify-center shadow-float hover:-translate-y-0.5 active:scale-95 motion-reduce:transform-none transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <X className="w-7 h-7 text-swipe-pass" />
+                <X className="w-7 h-7 text-swipe-pass" strokeWidth={2.5} />
               </button>
 
               {/* Super Swap */}
@@ -474,22 +503,22 @@ export default function SwipeInterface() {
                 disabled={superSwapsLeft === 0}
                 aria-label="Super swap"
                 className={cn(
-                  "w-12 h-12 rounded-full border-2 flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                  "w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                   superSwapsLeft > 0
-                    ? "bg-surface-elevated border-swipe-super/40 hover:bg-swipe-super/10 hover:border-swipe-super active:scale-95 shadow-elevated"
-                    : "bg-surface border-border opacity-40 cursor-not-allowed"
+                    ? "bg-surface-elevated shadow-float hover:-translate-y-0.5 active:scale-95 motion-reduce:transform-none"
+                    : "bg-muted opacity-50 cursor-not-allowed"
                 )}
               >
-                <Zap className="w-5 h-5 text-swipe-super" />
+                <Zap className="w-6 h-6 text-swipe-super" strokeWidth={2.5} />
               </button>
 
               {/* Want */}
               <button
                 onClick={() => handleSwipe("right")}
                 aria-label="Want to trade"
-                className="w-16 h-16 rounded-full bg-primary flex items-center justify-center hover:bg-primary-glow active:scale-95 transition-all duration-200 shadow-green pulse-green focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="w-16 h-16 rounded-full bg-surface-elevated flex items-center justify-center shadow-float hover:-translate-y-0.5 active:scale-95 motion-reduce:transform-none transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <Heart className="w-7 h-7 text-primary-foreground fill-primary-foreground" />
+                <Heart className="w-7 h-7 text-swipe-like fill-swipe-like" />
               </button>
             </div>
 
